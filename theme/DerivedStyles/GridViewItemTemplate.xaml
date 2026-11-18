@@ -43,43 +43,34 @@
                         <StackPanel Name="PART_PanelHost"
                                     d:DataContext="{x:Static DesignMainViewModel.DesignSelectedGameIntance}">
 
+                            <!-- The helper clips CoverHost to rounded corners (TileClip.cs), so the cover can be
+                                 a plain Image like the default theme. An ImageBrush on a rounded Border is
+                                 much more expensive to realise when new rows scroll into view. -->
+                            <!-- CoverHost is clipped to its rounded rect (TileClip.cs), so anything drawn outside
+                                 the tile (shadow, selection bar) has to live beside it, not inside it.
+                                 The shadow is one bitmap the helper renders per tile size from TileShadowEffect and
+                                 shares between all tiles (TileClip.cs); it is the tile plus 16px on every side. -->
+                            <Grid>
+                            <Image x:Name="TileShadow" Source="{DynamicResource Fluent11TileShadow}" Stretch="None"
+                                   Margin="-20" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   IsHitTestVisible="False" />
                             <Grid x:Name="CoverHost" Width="{Settings GridItemWidth}"
                                   Height="{Settings GridItemHeight}">
-                                <Border x:Name="SelectionIndicator" Width="28" Height="3" CornerRadius="1.5"
-                                        HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,-6"
-                                        Background="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False" RenderTransformOrigin="0.5,0.5">
-                                    <Border.RenderTransform>
-                                        <ScaleTransform />
-                                    </Border.RenderTransform>
-                                </Border>
-                                <Image Name="PART_ImageCover" Opacity="0"
-                                       StretchDirection="Both"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Stretch="{Settings CoverArtStretch}" />
-                                <Border CornerRadius="{DynamicResource CardCornerRadius}" Background="{DynamicResource LayerBrush}"
-                                        Effect="{DynamicResource TileShadowEffect}" IsHitTestVisible="False">
-                                    <Border.CacheMode>
-                                        <BitmapCache />
-                                    </Border.CacheMode>
-                                </Border>
                                 <Border x:Name="CoverPlaceholder" Background="{DynamicResource GridItemBackgroundBrush}"
                                         CornerRadius="{DynamicResource CardCornerRadius}" />
-                                <Border x:Name="CoverImage" CornerRadius="{DynamicResource CardCornerRadius}">
-                                    <Border.Background>
-                                        <ImageBrush Stretch="{Binding Stretch, ElementName=PART_ImageCover}"
-                                                    RenderOptions.BitmapScalingMode="Fant">
-                                            <ImageBrush.ImageSource>
-                                                <PriorityBinding>
-                                                    <Binding ElementName="CoverHost" Path="Tag.Image" />
-                                                    <Binding ElementName="PART_ImageCover" Path="Source" />
-                                                </PriorityBinding>
-                                            </ImageBrush.ImageSource>
-                                            <ImageBrush.RelativeTransform>
-                                                <ScaleTransform CenterX="0.5" CenterY="0.5" />
-                                            </ImageBrush.RelativeTransform>
-                                        </ImageBrush>
-                                    </Border.Background>
-                                </Border>
+                                <Image Name="PART_ImageCover"
+                                       RenderOptions.BitmapScalingMode="Fant" StretchDirection="Both"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Stretch="{Settings CoverArtStretch}" RenderTransformOrigin="0.5,0.5">
+                                    <Image.RenderTransform>
+                                        <ScaleTransform />
+                                    </Image.RenderTransform>
+                                </Image>
+                                <Image x:Name="PosterCover" Source="{Binding Tag.Image, ElementName=CoverHost}"
+                                       RenderOptions.BitmapScalingMode="Fant" StretchDirection="Both"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Stretch="{Binding Stretch, ElementName=PART_ImageCover}" RenderTransformOrigin="0.5,0.5"
+                                       RenderTransform="{Binding RenderTransform, ElementName=PART_ImageCover}" />
                                 <Border Background="{DynamicResource CoverNameOverlayBrush}" x:Name="TextGameName"
                                         CornerRadius="{DynamicResource CardCornerRadius}" Visibility="Collapsed">
                                     <TextBlock Text="{Binding DisplayName}"
@@ -91,8 +82,6 @@
                                 </Border>
                                 <Border Background="{DynamicResource CoverHoverOverlayBrush}" x:Name="BorderUninstalled"
                                         CornerRadius="{DynamicResource CardCornerRadius}" Visibility="Collapsed" />
-                                <Border CornerRadius="{DynamicResource CardCornerRadius}" BorderThickness="1"
-                                        BorderBrush="{DynamicResource ImageStrokeBrush}" IsHitTestVisible="False" />
                                 <Border x:Name="GameControls" Background="Transparent" Opacity="0"
                                         CornerRadius="{DynamicResource CardCornerRadius}" Visibility="Collapsed">
                                     <Viewbox>
@@ -110,6 +99,20 @@
                                     </Viewbox>
                                 </Border>
                             </Grid>
+                            <!-- Stroke lives outside CoverHost so the helper's half-pixel-inset clip doesn't
+                                 shave off its outer half. -->
+                            <Border CornerRadius="{DynamicResource CardCornerRadius}" BorderThickness="1"
+                                    Width="{Binding ActualWidth, ElementName=CoverHost}"
+                                    Height="{Binding ActualHeight, ElementName=CoverHost}"
+                                    BorderBrush="{DynamicResource ImageStrokeBrush}" IsHitTestVisible="False" />
+                            <Border x:Name="SelectionIndicator" Width="28" Height="3" CornerRadius="1.5"
+                                    HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,-6"
+                                    Background="{DynamicResource AccentBrush}" Visibility="Collapsed" IsHitTestVisible="False" RenderTransformOrigin="0.5,0.5">
+                                <Border.RenderTransform>
+                                    <ScaleTransform />
+                                </Border.RenderTransform>
+                            </Border>
+                            </Grid>
                             <TextBlock Text="{Binding DisplayName}"
                                        Style="{DynamicResource BaseTextBlockStyle}"
                                        TextAlignment="Center" TextTrimming="CharacterEllipsis"
@@ -120,6 +123,12 @@
                         </StackPanel>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding Tag, ElementName=CoverHost}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed" TargetName="PosterCover" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Visibility, ElementName=PosterCover}" Value="Visible">
+                            <Setter Property="Visibility" Value="Hidden" TargetName="PART_ImageCover" />
+                        </DataTrigger>
                         <DataTrigger Binding="{PluginSettings Plugin=Fluent11Helper, Path=PosterTiles, FallbackValue=False}" Value="True">
                             <Setter Property="Height" Value="{DynamicResource Fluent11PosterTileHeight}" TargetName="CoverHost" />
                         </DataTrigger>
@@ -162,15 +171,15 @@
                                         </ObjectAnimationUsingKeyFrames>
                                         <DoubleAnimation Storyboard.TargetName="GameControls" Storyboard.TargetProperty="Opacity"
                                                          To="1" Duration="0:0:0.12" />
-                                        <DoubleAnimation Storyboard.TargetName="CoverImage"
-                                                         Storyboard.TargetProperty="(Border.Background).(Brush.RelativeTransform).(ScaleTransform.ScaleX)"
+                                        <DoubleAnimation Storyboard.TargetName="PART_ImageCover"
+                                                         Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)"
                                                          To="1.03" Duration="0:0:0.35">
                                             <DoubleAnimation.EasingFunction>
                                                 <ExponentialEase EasingMode="EaseOut" Exponent="6" />
                                             </DoubleAnimation.EasingFunction>
                                         </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetName="CoverImage"
-                                                         Storyboard.TargetProperty="(Border.Background).(Brush.RelativeTransform).(ScaleTransform.ScaleY)"
+                                        <DoubleAnimation Storyboard.TargetName="PART_ImageCover"
+                                                         Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)"
                                                          To="1.03" Duration="0:0:0.35">
                                             <DoubleAnimation.EasingFunction>
                                                 <ExponentialEase EasingMode="EaseOut" Exponent="6" />
@@ -187,15 +196,15 @@
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetName="GameControls" Storyboard.TargetProperty="Visibility">
                                             <DiscreteObjectKeyFrame KeyTime="0:0:0.12" Value="{x:Static Visibility.Collapsed}" />
                                         </ObjectAnimationUsingKeyFrames>
-                                        <DoubleAnimation Storyboard.TargetName="CoverImage"
-                                                         Storyboard.TargetProperty="(Border.Background).(Brush.RelativeTransform).(ScaleTransform.ScaleX)"
+                                        <DoubleAnimation Storyboard.TargetName="PART_ImageCover"
+                                                         Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)"
                                                          To="1" Duration="0:0:0.35">
                                             <DoubleAnimation.EasingFunction>
                                                 <ExponentialEase EasingMode="EaseOut" Exponent="6" />
                                             </DoubleAnimation.EasingFunction>
                                         </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetName="CoverImage"
-                                                         Storyboard.TargetProperty="(Border.Background).(Brush.RelativeTransform).(ScaleTransform.ScaleY)"
+                                        <DoubleAnimation Storyboard.TargetName="PART_ImageCover"
+                                                         Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)"
                                                          To="1" Duration="0:0:0.35">
                                             <DoubleAnimation.EasingFunction>
                                                 <ExponentialEase EasingMode="EaseOut" Exponent="6" />
