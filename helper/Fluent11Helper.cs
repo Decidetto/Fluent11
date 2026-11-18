@@ -304,6 +304,7 @@ namespace Fluent11Helper
                 EventManager.RegisterClassHandler(typeof(ListBox), FrameworkElement.SizeChangedEvent, new SizeChangedEventHandler(OnListBoxSizeChanged));
                 CoverFormat.Configure(PlayniteApi, () => settings.Settings.ListUseIcons);
                 PosterCovers.Register(GetPluginUserDataPath(), () => settings.Settings);
+                TileClip.Register();
                 ScreenshotStrip.Register(PlayniteApi, () => settings.Settings);
                 MediaViewer.Register(themeDir);
                 SystemRequirements.Register(GetPluginUserDataPath(), () => settings.Settings);
