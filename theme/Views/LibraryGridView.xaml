@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -404,7 +404,13 @@
                                 </Style>
                             </Border.Style>
                         </Border>
-                        <Border x:Name="OverlayShadow" Style="{DynamicResource PopupShadow}" Visibility="Collapsed" />
+                        <!-- BitmapCache: without it the blur is redrawn every frame the details content
+                             above it scrolls. -->
+                        <Border x:Name="OverlayShadow" Style="{DynamicResource PopupShadow}" Visibility="Collapsed">
+                            <Border.CacheMode>
+                                <BitmapCache />
+                            </Border.CacheMode>
+                        </Border>
                         <Border x:Name="OverlayCard" Style="{DynamicResource PopupBorder}" Visibility="Collapsed" />
                         <Border x:Name="OverlayFullCard" Background="{DynamicResource LayerBrush}" CornerRadius="7,0,0,0" Visibility="Collapsed" />
                         <GridViewGameOverview x:Name="PART_ControlGameView" />
