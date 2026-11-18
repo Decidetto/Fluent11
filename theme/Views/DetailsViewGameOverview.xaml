@@ -120,7 +120,12 @@
                                            Height="{Settings GameDetailsCoverHeight}"
                                            StretchDirection="Both" Stretch="Uniform" />
                                     <Border CornerRadius="{DynamicResource CardCornerRadius}" Background="{DynamicResource LayerBrush}"
-                                            Effect="{DynamicResource CoverShadowEffect}" />
+                                            Effect="{DynamicResource CoverShadowEffect}">
+                                        <!-- Cache the blurred shadow so scrolling just moves it. -->
+                                        <Border.CacheMode>
+                                            <BitmapCache />
+                                        </Border.CacheMode>
+                                    </Border>
                                     <Border CornerRadius="{DynamicResource CardCornerRadius}">
                                         <Border.Background>
                                             <ImageBrush Stretch="UniformToFill" RenderOptions.BitmapScalingMode="Fant">

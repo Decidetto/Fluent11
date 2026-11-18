@@ -363,7 +363,13 @@
                                 </Style.Triggers>
                             </Style>
                         </Grid.Resources>
-                        <Border x:Name="OverlayShadow" Style="{DynamicResource PopupShadow}" Visibility="Collapsed" />
+                        <!-- BitmapCache: without it the blur is redrawn every frame the details content
+                             above it scrolls. -->
+                        <Border x:Name="OverlayShadow" Style="{DynamicResource PopupShadow}" Visibility="Collapsed">
+                            <Border.CacheMode>
+                                <BitmapCache />
+                            </Border.CacheMode>
+                        </Border>
                         <Border x:Name="OverlayCard" Style="{DynamicResource PopupBorder}" Visibility="Collapsed" />
                         <Border x:Name="OverlayFullCard" Background="{DynamicResource LayerBrush}" CornerRadius="7,0,0,0" Visibility="Collapsed" />
                         <GridViewGameOverview x:Name="PART_ControlGameView" />
