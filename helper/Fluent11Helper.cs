@@ -430,6 +430,7 @@ namespace Fluent11Helper
             AddonUpdateBadge.Register(PlayniteApi, () => settings.Settings.ShowAddonsButton && settings.Settings.ShowAddonUpdateCount);
 
             Application.Current?.Dispatcher.BeginInvoke(new Action(() => DependencyCheck.Run(PlayniteApi)), DispatcherPriority.ApplicationIdle);
+            SidePanels.Prewarm();
         }
 
         public override void OnApplicationStopped(OnApplicationStoppedEventArgs args)

@@ -37,6 +37,10 @@ namespace Fluent11Helper
         // Slot size and column count of the layout last set (predicted, then confirmed once settled).
         private static Size shownSlot = Size.Empty;
         private static int shownColumns;
+        // Window width at the last unscaled layout, to tell a side panel toggle from a window resize.
+        private static double baseWindowWidth;
+        private static readonly TimeSpan DragDelay = TimeSpan.FromMilliseconds(150);
+        private static readonly TimeSpan PanelDelay = TimeSpan.FromMilliseconds(300);
 
         public static void Register(Fluent11HelperSettingsViewModel settingsModel)
         {
@@ -66,6 +70,10 @@ namespace Fluent11Helper
                         if (e.PropertyName == "GridItemSpacing" || e.PropertyName == "GridItemWidth")
                         {
                             Schedule();
+                        }
+                        else if (e.PropertyName == "ExplorerPanelVisible" || e.PropertyName == "FilterPanelVisible")
+                        {
+                            PinForPanel();
                         }
                     };
                 }
@@ -185,7 +193,7 @@ namespace Fluent11Helper
                 return;
             }
 
-            if (!sizing && !IsScaled())
+            if (!sizing && !IsScaled() && !PanelToggled(list))
             {
                 if (WindowStatePending(list))
                 {
@@ -223,7 +231,35 @@ namespace Fluent11Helper
                 presenter.LayoutTransform = new ScaleTransform(scale, scale);
             }
 
-            Schedule();
+            Schedule(sizing ? DragDelay : PanelDelay);
+        }
+
+        // A side panel is about to open or close. Pin the tiles at their current width before WPF's next
+        // layout pass: otherwise that pass first lays the grid out at the new width with the old tile size
+        // (other columns, other games realized, covers loaded), and only then does the size change switch
+        // to the scaled preview. The size change then just sets the scale; the real re-layout follows.
+        private static void PinForPanel()
+        {
+            if (model?.Settings?.GridFitWindow != true || IsScaled() || baseItemsWidth <= 0
+                || hookedList == null || !hookedList.TryGetTarget(out var list) || !list.IsVisible
+                || !(HostPresenter(list) is ItemsPresenter presenter))
+            {
+                return;
+            }
+
+            presenter.Width = baseItemsWidth;
+            presenter.LayoutTransform = new ScaleTransform(1, 1);
+            // Unpins again if the grid width doesn't change after all.
+            Schedule(PanelDelay);
+        }
+
+        // The window kept its width, so a side panel (Explore, Filter, details) opened or closed. Show
+        // the grid scaled first so the panel appears straight away; the user looks at the panel for the
+        // first moments anyway, and the real re-layout (which reloads every cover) follows shortly.
+        private static bool PanelToggled(ListBox list)
+        {
+            var window = Window.GetWindow(list);
+            return window != null && baseWindowWidth > 0 && Math.Abs(window.ActualWidth - baseWindowWidth) < 0.5;
         }
 
         // The main window style pads the window while maximised (MainWindowStyle.xaml, WindowBorder),
@@ -287,9 +323,16 @@ namespace Fluent11Helper
 
         private static void Schedule()
         {
+            Schedule(DragDelay);
+        }
+
+        private static void Schedule(TimeSpan delay)
+        {
             if (timer == null)
             {
-                timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+                // Normal priority: at the default (Background) the tick can wait behind Playnite's own
+                // background work for a second or more, leaving the grid scaled for that long.
+                timer = new DispatcherTimer(DispatcherPriority.Normal);
                 timer.Tick += (s, e) =>
                 {
                     timer.Stop();
@@ -298,6 +341,7 @@ namespace Fluent11Helper
             }
 
             timer.Stop();
+            timer.Interval = delay;
             timer.Start();
         }
 
@@ -517,6 +561,7 @@ namespace Fluent11Helper
 
             baseListWidth = list.ActualWidth;
             baseItemsWidth = presenter.ActualWidth;
+            baseWindowWidth = Window.GetWindow(list)?.ActualWidth ?? 0;
             Panel panel = null;
             lastPanel?.TryGetTarget(out panel);
             var panelWidth = panel != null ? panel.ActualWidth : 0;
