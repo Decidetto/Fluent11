@@ -39,6 +39,8 @@ namespace Fluent11Helper
         private static int shownColumns;
         // Window width at the last unscaled layout, to tell a side panel toggle from a window resize.
         private static double baseWindowWidth;
+        // Set while a side panel is closing, so its re-layout runs right after the next frame.
+        private static bool panelClosing;
         private static readonly TimeSpan DragDelay = TimeSpan.FromMilliseconds(150);
         private static readonly TimeSpan PanelDelay = TimeSpan.FromMilliseconds(300);
 
@@ -73,7 +75,7 @@ namespace Fluent11Helper
                         }
                         else if (e.PropertyName == "ExplorerPanelVisible" || e.PropertyName == "FilterPanelVisible")
                         {
-                            PinForPanel();
+                            PinForPanel(!(Reflect.GetMember(s, e.PropertyName) is bool open && open));
                         }
                     };
                 }
@@ -231,15 +233,41 @@ namespace Fluent11Helper
                 presenter.LayoutTransform = new ScaleTransform(scale, scale);
             }
 
+            if (!sizing && panelClosing)
+            {
+                panelClosing = false;
+                ApplyAfterNextFrame();
+                return;
+            }
+
             Schedule(sizing ? DragDelay : PanelDelay);
+        }
+
+        // A closing panel has no animation to protect, and the user looks at the grid again, so lay it
+        // out as soon as the frame without the panel is on screen. Subscribing here (inside a layout
+        // pass) means the handler runs at the next frame, after the scaled grid has been drawn.
+        private static void ApplyAfterNextFrame()
+        {
+            EventHandler rendering = null;
+            rendering = (s, e) =>
+            {
+                CompositionTarget.Rendering -= rendering;
+                Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
+                {
+                    timer?.Stop();
+                    Apply();
+                }), DispatcherPriority.Normal);
+            };
+            CompositionTarget.Rendering += rendering;
         }
 
         // A side panel is about to open or close. Pin the tiles at their current width before WPF's next
         // layout pass: otherwise that pass first lays the grid out at the new width with the old tile size
         // (other columns, other games realized, covers loaded), and only then does the size change switch
         // to the scaled preview. The size change then just sets the scale; the real re-layout follows.
-        private static void PinForPanel()
+        private static void PinForPanel(bool closing)
         {
+            panelClosing = false;
             if (model?.Settings?.GridFitWindow != true || IsScaled() || baseItemsWidth <= 0
                 || hookedList == null || !hookedList.TryGetTarget(out var list) || !list.IsVisible
                 || !(HostPresenter(list) is ItemsPresenter presenter))
@@ -249,6 +277,7 @@ namespace Fluent11Helper
 
             presenter.Width = baseItemsWidth;
             presenter.LayoutTransform = new ScaleTransform(1, 1);
+            panelClosing = closing;
             // Unpins again if the grid width doesn't change after all.
             Schedule(PanelDelay);
         }
