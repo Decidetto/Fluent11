@@ -435,6 +435,7 @@ namespace Fluent11Helper
             }
 
             Application.Current?.Dispatcher.BeginInvoke(new Action(() => DependencyCheck.Run(PlayniteApi)), DispatcherPriority.ApplicationIdle);
+            SidePanels.Prewarm();
         }
 
         public override void OnApplicationStopped(OnApplicationStoppedEventArgs args)
