@@ -164,7 +164,17 @@
                                                 <Setter Property="Margin" Value="0,0,16,0" />
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                                 <Style.Triggers>
+                                                    <!-- Show up to four developers. -->
                                                     <Trigger Property="ItemsControl.AlternationIndex" Value="0">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </Trigger>
+                                                    <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </Trigger>
+                                                    <Trigger Property="ItemsControl.AlternationIndex" Value="2">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </Trigger>
+                                                    <Trigger Property="ItemsControl.AlternationIndex" Value="3">
                                                         <Setter Property="Visibility" Value="Visible" />
                                                     </Trigger>
                                                 </Style.Triggers>
@@ -306,9 +316,21 @@
                                                 </ItemsControl.ItemsPanel>
                                                 <ItemsControl.ItemContainerStyle>
                                                     <Style TargetType="ContentPresenter">
+                                                        <Setter Property="Margin" Value="16,0,0,0" />
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                         <Style.Triggers>
+                                                            <!-- Show up to four genres, spaced like the developers. -->
                                                             <Trigger Property="ItemsControl.AlternationIndex" Value="0">
+                                                                <Setter Property="Margin" Value="0" />
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </Trigger>
+                                                            <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </Trigger>
+                                                            <Trigger Property="ItemsControl.AlternationIndex" Value="2">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </Trigger>
+                                                            <Trigger Property="ItemsControl.AlternationIndex" Value="3">
                                                                 <Setter Property="Visibility" Value="Visible" />
                                                             </Trigger>
                                                         </Style.Triggers>
