@@ -147,6 +147,8 @@ namespace Fluent11Helper
             Check(area, "MainModel.SidebarItems (SideItem, Command)", "Fluent 11 entry opens the settings page",
                 () => Reflect.GetMember(Reflect.GetMember(app, "MainModel"), "SidebarItems") is System.Collections.IEnumerable entries
                     && entries.Cast<object>().Any(a => Has(a, "SideItem") && Has(a, "Command")));
+            Check(area, "MainModel.RestartApp", "restart button on the settings page",
+                () => PlayniteInternals.RestartCommand != null);
             Check(area, "Extensions.SettingsSupportList", "achievements page and flyout data",
                 () => Has(Reflect.GetMember(app, "Extensions"), "SettingsSupportList"));
             Check(area, "ThemeManager.CurrentTheme.DirectoryPath", "theme folder of the active theme",
@@ -157,7 +159,7 @@ namespace Fluent11Helper
 
             foreach (var name in new[] { "GameEditWindow", "MessageBoxWindow", "ProgressWindow", "UpdateWindow", "SearchWindow", "AddonsWindow",
                 "EmulatedGameImportWindow", "FirstTimeStartupWindow", "ImageSelectionWindow", "ItemSelectionWithSearchWindow",
-                "MetadataComparisonWindow", "MetadataDownloadWindow", "LibraryGridView", "LibraryDetailsView", "GamesGridView" })
+                "MetadataComparisonWindow", "MetadataDownloadWindow", "DatabaseFieldsManagerWindow", "LibraryGridView", "LibraryDetailsView", "GamesGridView" })
             {
                 Check(area, $"type {name}", "window and view adjustments", () => FindType("Playnite", name) != null);
             }
@@ -396,7 +398,7 @@ namespace Fluent11Helper
             Check(area, "ScreenshotGroups.CreateGroupsFromFiles", "screenshot strip",
                 () => assembly.GetType("KNARZhelper.ScreenshotsCommon.Models.ScreenshotGroups")?.GetMethod("CreateGroupsFromFiles", Any) != null);
             var group = assembly.GetType("KNARZhelper.ScreenshotsCommon.Models.ScreenshotGroup");
-            Check(area, "ScreenshotGroup Name/Provider.Name/Screenshots", "screenshot strip",
+            Check(area, "ScreenshotGroup Name/Provider.Name/Screenshots", "screenshot strip and viewer title",
                 () => HasAll(group, "Name", "Screenshots") && Has(PropertyType(group, "Provider"), "Name"));
             Check(area, "Screenshot DisplayThumbnail/IsVideo/DisplayPath/VideoPath", "screenshot strip and viewer",
                 () => HasAll(assembly.GetType("KNARZhelper.ScreenshotsCommon.Models.Screenshot"), "DisplayThumbnail", "IsVideo", "DisplayPath", "VideoPath"));

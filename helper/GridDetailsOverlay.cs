@@ -32,6 +32,27 @@ namespace Fluent11Helper
             this.reportOpen = reportOpen;
         }
 
+        private static bool IsInButton(DependencyObject element, DependencyObject stop)
+        {
+            var current = element;
+            while (current != null && current != stop)
+            {
+                if (current is ButtonBase)
+                {
+                    return true;
+                }
+
+                if (!(current is Visual))
+                {
+                    return false;
+                }
+
+                current = VisualTreeHelper.GetParent(current);
+            }
+
+            return false;
+        }
+
         public void Attach(ListBox list)
         {
             if (!(list.TemplatedParent is Control grid)
@@ -59,7 +80,8 @@ namespace Fluent11Helper
             {
                 var pressed = pressedInList;
                 pressedInList = false;
-                if (pressed && ItemsControl.ContainerFromElement(list, e.OriginalSource as DependencyObject) is ListBoxItem)
+                if (pressed && ItemsControl.ContainerFromElement(list, e.OriginalSource as DependencyObject) is ListBoxItem item
+                    && !IsInButton(e.OriginalSource as DependencyObject, item))
                 {
                     Open();
                 }

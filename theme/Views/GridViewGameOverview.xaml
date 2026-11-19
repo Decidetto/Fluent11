@@ -13,6 +13,15 @@
             </Setter.Value>
         </Setter>
         <Style.Triggers>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{PluginSettings Plugin=Fluent11Helper, Path=GridSidePanel, FallbackValue=False}" Value="True" />
+                    <Condition Binding="{PluginSettings Plugin=Fluent11Helper, Path=GridOverlayActive, FallbackValue=False}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Template" Value="{DynamicResource Fluent11GameOverviewTemplate}" />
+                <Setter Property="Margin" Value="1,0,0,0" />
+                <Setter Property="Tag" Value="SidePanel" />
+            </MultiDataTrigger>
             <DataTrigger Binding="{PluginSettings Plugin=Fluent11Helper, Path=GridOverlayActive, FallbackValue=False}" Value="True">
                 <Setter Property="Template" Value="{DynamicResource Fluent11GameOverviewTemplate}" />
                 <Setter Property="Margin" Value="9,6,9,13" />

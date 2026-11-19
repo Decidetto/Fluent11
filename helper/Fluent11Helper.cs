@@ -428,6 +428,11 @@ namespace Fluent11Helper
 
             AddonUpdateBadge.Register(PlayniteApi, () => settings.Settings.ShowAddonsButton && settings.Settings.ShowAddonUpdateCount);
 
+            if (settings.Settings.CheckForUpdates)
+            {
+                UpdateCheck.Run(PlayniteApi);
+            }
+
             Application.Current?.Dispatcher.BeginInvoke(new Action(() => DependencyCheck.Run(PlayniteApi)), DispatcherPriority.ApplicationIdle);
         }
 
@@ -461,6 +466,11 @@ namespace Fluent11Helper
 
         private void ApplyMica(Window window)
         {
+            if (window.AllowsTransparency || (window.WindowStyle == WindowStyle.None && !window.ShowInTaskbar && !window.ShowActivated))
+            {
+                return;
+            }
+
             try
             {
                 if (micaActive)
@@ -690,6 +700,7 @@ namespace Fluent11Helper
                 currentDark = dark;
                 currentAccent = accent;
                 TrayMenu.SchemeChanged();
+                MediaViewer.SchemeChanged();
                 foreach (Window window in Application.Current.Windows)
                 {
                     if (replaced.Count > 0)
@@ -992,13 +1003,24 @@ namespace Fluent11Helper
                 return;
             }
 
+            Func<bool> wanted = () => true;
             if (list.TemplatedParent?.GetType().Name == "LibraryGridView")
             {
-                gridOverlay?.Attach(list);
-                return;
-            }
+                if (gridOverlay != null)
+                {
+                    gridOverlay.Attach(list);
+                    return;
+                }
 
-            if (list.TemplatedParent?.GetType().Name != "LibraryDetailsView")
+                if (list.TemplatedParent is Control grid
+                    && grid.Template?.FindName("PART_ControlGameView", grid) is FrameworkElement view)
+                {
+                    view.Visibility = Visibility.Visible;
+                }
+
+                wanted = () => settings.Settings.GridSidePanel;
+            }
+            else if (list.TemplatedParent?.GetType().Name != "LibraryDetailsView")
             {
                 return;
             }
@@ -1008,14 +1030,17 @@ namespace Fluent11Helper
                 list.SetValue(IsFirstGameWatchedProperty, true);
                 list.IsVisibleChanged += (s, a) =>
                 {
-                    if (true.Equals(a.NewValue))
+                    if (true.Equals(a.NewValue) && wanted())
                     {
                         SelectFirstGame(list);
                     }
                 };
             }
 
-            SelectFirstGame(list);
+            if (wanted())
+            {
+                SelectFirstGame(list);
+            }
         }
 
         private static void SelectFirstGame(ListBox list)

@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Media;
 
 namespace Fluent11Helper
 {
@@ -73,7 +74,11 @@ namespace Fluent11Helper
 
             var ratio = WidthPerHeight();
             host.Resources["Fluent11ListCoverWidth"] = ListUsesIcons ? 32 : Math.Round(32 * ratio);
-            host.Resources["Fluent11FlyoutCoverWidth"] = Math.Round(48 * ratio);
+            var flyoutWidth = Math.Round(88 * ratio);
+            host.Resources["Fluent11FlyoutCoverWidth"] = flyoutWidth;
+            var flyoutClip = new RectangleGeometry(new Rect(0, 0, flyoutWidth, 88), 6, 6);
+            flyoutClip.Freeze();
+            host.Resources["Fluent11FlyoutCoverClip"] = flyoutClip;
             host.Resources["Fluent11LargeCoverWidth"] = Math.Round(160 * ratio);
         }
     }

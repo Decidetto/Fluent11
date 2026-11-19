@@ -14,7 +14,7 @@
                FontSize="{DynamicResource FontSizeLarger}" FontWeight="SemiBold" />
 
     <DockPanel Grid.Row="1" Margin="24,12,0,0">
-        <Border DockPanel.Dock="Top" HorizontalAlignment="Left" MaxWidth="1200" Margin="0,8,24,0" Padding="16,12"
+        <Border DockPanel.Dock="Top" HorizontalAlignment="Left" MaxWidth="1200" Margin="0,8,24,0" Padding="16,8" MinHeight="48"
                 BorderThickness="1" CornerRadius="{DynamicResource ControlCornerRadius}"
                 Background="{DynamicResource SurfaceCardBrush}" BorderBrush="{DynamicResource CardStrokeBrush}">
             <Border.Style>
@@ -29,8 +29,20 @@
             </Border.Style>
             <DockPanel>
                 <TextBlock DockPanel.Dock="Left" Text="&#xE946;" FontFamily="{DynamicResource FluentIconFont}" FontSize="16"
-                           Foreground="{DynamicResource AccentBrush}" Margin="0,2,12,0" VerticalAlignment="Top" />
-                <TextBlock Text="Some changes take effect after restarting Playnite." TextWrapping="Wrap" />
+                           Foreground="{DynamicResource AccentBrush}" Margin="0,0,12,0" VerticalAlignment="Center" />
+                <Button DockPanel.Dock="Right" Content="Restart" Command="{Binding RestartCommand}" Margin="16,0,0,0"
+                        VerticalAlignment="Center">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CanRestart}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <TextBlock Text="Some changes take effect after restarting Playnite." TextWrapping="Wrap" VerticalAlignment="Center" />
             </DockPanel>
         </Border>
         <Grid Style="{DynamicResource Fluent11PageEntrance}">

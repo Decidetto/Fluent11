@@ -376,8 +376,8 @@ namespace Fluent11Helper
             else
             {
                 m.PlaytimeText = StatsGame.NotPlayedText;
-                m.ShareText = "-";
-                m.RankText = "-";
+                m.ShareText = null;
+                m.RankText = null;
             }
 
             m.SessionsText = game.PlayCount > 0 ? game.PlayCount.ToString("N0", CultureInfo.CurrentCulture) : "-";

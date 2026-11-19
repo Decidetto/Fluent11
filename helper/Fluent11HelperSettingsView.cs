@@ -8,6 +8,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Media3D;
 
 namespace Fluent11Helper
 {
@@ -76,9 +77,13 @@ namespace Fluent11Helper
                         Toggle("Hidden games (Fluent 11)", () => s.ShowHiddenGamesButton, v => s.ShowHiddenGamesButton = v),
                         Toggle("Filter", () => s.ShowFilterButton, v => s.ShowFilterButton = v)
                     }),
-                Multi("\uF2C7", "Hide menu entries", "Optional entries of the main menu and the right-click menu of games",
+                Multi("\uE712", "Hide menu entries", "Optional entries of the main menu and the right-click menu of games",
                     s => HiddenCount(MenuPolish.MenuEntries.Count(a => s.HiddenMenuEntries.Contains(a.Id))),
                     s => MenuEntryItems(s)));
+
+            Group(panel, "Updates",
+                Row("\uE895", "Check for updates", "Looks for a new Fluent 11 version on GitHub at startup and shows a notification. Nothing is downloaded",
+                    "Settings.CheckForUpdates"));
             return panel;
         }
 
@@ -86,10 +91,9 @@ namespace Fluent11Helper
         {
             var panel = new StackPanel();
             Group(panel, "Grid view",
-                Choice("\uE90C", "Game details", "How details open when you click a cover", "Settings.GridDetailsIndex", null,
-                    "None", "Overlay", "Full page"),
-                Available(Row("\uE768", "Play/Install button on covers", "Shown when hovering a cover. Not available with Overlay or Full page",
-                    "Settings.ShowGridPlayButton"), "Settings.GridPlayButtonAvailable"),
+                Choice("\uE90C", "Game details", "How the details of the selected game are shown", "Settings.GridDetailsIndex", null,
+                    "None", "Side panel", "Overlay", "Full page"),
+                Row("\uE768", "Play/Install button on covers", "Shown when hovering a cover", "Settings.ShowGridPlayButton"),
                 Choice("\uF0E2", "Cover size", "Fit window: covers grow and shrink with the window, the zoom sets the number of columns",
                     "Settings.GridSizeIndex", null, "Fixed (Playnite default)", "Fit window"),
                 Dependent(Choice(null, "Columns", "Covers side by side, also set with the zoom", "Settings.GridColumnsIndex", null,
@@ -98,8 +102,16 @@ namespace Fluent11Helper
                 Row("\uE8A3", "Zoom button", "Magnifier at the bottom right to change the cover size or number of columns", "Settings.ShowZoomButton"));
 
             Group(panel, "Game details",
-                Needs(Choice("\uF7ED", "Screenshots", "Screenshot thumbnails in the game details. Needs Screenshot Utilities", "Settings.ScreenshotIndex", null,
-                    "Off", "Thumbnails", "Thumbnails, click opens viewer"), ScreenshotUtilities),
+                Needs(Expandable(Row("\uF7ED", "Screenshots", "Screenshot thumbnails in the game details. Needs Screenshot Utilities",
+                    "Settings.ScreenshotStrip"),
+                    "Settings.ScreenshotStrip",
+                    Row(null, "Open viewer on click", "Shows the screenshot large, browse with the arrow keys", "Settings.ScreenshotFullScreen"),
+                    Choice(null, "Thumbnails", "Number of screenshots shown. Only these are loaded", "Settings.ScreenshotLimitIndex", null,
+                        "All", "10", "20", "30", "50"),
+                    Choice(null, "Order", "Default keeps the order of Screenshot Utilities", "Settings.ScreenshotOrder", null,
+                        "Default", "Date (newest first)"),
+                    Row(null, "Crop black bars", "Removes black bars from screenshot thumbnails", "Settings.ScreenshotTrimBars",
+                        "May crop images that don't need it, e.g. very dark scenes")), ScreenshotUtilities),
                 Needs(Expandable(Row("\uE714", "Trailer", "Game trailer as the first thumbnail, plays on click. Needs Extra Metadata Loader",
                     "Settings.ShowTrailer",
                     "Uses the video Extra Metadata Loader downloaded for the game. Shown even without screenshots"),
@@ -110,7 +122,7 @@ namespace Fluent11Helper
                         "Trailer", "Micro trailer"),
                     Row(null, "Start muted", "Sound can be turned on in the player at any time. Also for videos among the screenshots",
                         "Settings.VideoStartMuted")), ExtraMetadataLoader),
-                Choice("\uE70D", "Show more", "Long description and details are shortened with Show more, or always shown in full",
+                Choice("\uE8C4", "Show more", "Long description and details are shortened with Show more, or always shown in full",
                     "Settings.ShowMoreIndex", null, "Shorten both", "Full description", "Full details", "Show everything"));
             return panel;
         }
@@ -165,10 +177,7 @@ namespace Fluent11Helper
                     "Steam rating in place of Community score, plus a card with the most helpful positive and critical review. " +
                     "Three small requests per game to Steam's store (ajaxappreviews): the overall rating across all languages and the " +
                     "most helpful positive and critical English review of the past year. Only after a game stays selected for a moment, " +
-                    "one game at a time. Kept for a week, then requested again"),
-                Needs(Available(Row("\uE7A8", "Crop black bars", "Removes black bars from screenshot thumbnails. " +
-                    "Needs Screenshots on in the Library tab", "Settings.ScreenshotTrimBars",
-                    "May crop images that don't need it, e.g. very dark scenes"), "Settings.ScreenshotStrip"), ScreenshotUtilities));
+                    "one game at a time. Kept for a week, then requested again"));
             return panel;
         }
 
@@ -439,7 +448,7 @@ namespace Fluent11Helper
             Grid.SetColumn(expand, 1);
             head.Children.Add(expand);
 
-            var body = new StackPanel { Margin = new Thickness(IconWidth + IconGap, 0, 0, 0), Visibility = Visibility.Collapsed };
+            var body = new StackPanel { Margin = new Thickness(IconWidth + IconGap, 0, 0, 0) };
             if (enabledPath != null)
             {
                 body.SetBinding(IsEnabledProperty, new Binding(enabledPath));
@@ -453,24 +462,70 @@ namespace Fluent11Helper
                 body.Children.Add(option);
             }
 
-            if (row is Grid heading && heading.Tag as string == HeadingTag)
+            head.Background = Brushes.Transparent;
+            head.MouseLeftButtonUp += (s, e) =>
             {
-                head.Background = Brushes.Transparent;
-                head.MouseLeftButtonUp += (s, e) =>
+                if (!InControl(e.OriginalSource as DependencyObject, head))
                 {
-                    if (!expand.IsMouseOver)
-                    {
-                        expand.IsChecked = expand.IsChecked != true;
-                    }
-                };
-            }
+                    expand.IsChecked = expand.IsChecked != true;
+                }
+            };
 
-            expand.Checked += (s, e) => body.Visibility = Visibility.Visible;
-            expand.Unchecked += (s, e) => body.Visibility = Visibility.Collapsed;
+            var clip = new Border { Child = body, ClipToBounds = true, Visibility = Visibility.Collapsed };
             var panel = new StackPanel();
             panel.Children.Add(head);
-            panel.Children.Add(body);
+            panel.Children.Add(clip);
+            expand.Checked += (s, e) => Unfold(panel, clip, expand, true);
+            expand.Unchecked += (s, e) => Unfold(panel, clip, expand, false);
             return panel;
+        }
+
+        private static void Unfold(FrameworkElement panel, Border clip, ToggleButton expand, bool open)
+        {
+            if (!SystemParameters.ClientAreaAnimation || !panel.IsLoaded)
+            {
+                clip.BeginAnimation(HeightProperty, null);
+                clip.Height = double.NaN;
+                clip.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+                return;
+            }
+
+            var start = clip.Visibility == Visibility.Visible ? clip.ActualHeight : 0;
+            clip.Visibility = Visibility.Visible;
+            clip.Child.Measure(new Size(panel.ActualWidth, double.PositiveInfinity));
+            var end = open ? clip.Child.DesiredSize.Height : 0;
+            var animation = new DoubleAnimation(start, end, TimeSpan.FromMilliseconds(open ? 250 : 200))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            animation.Completed += (s, e) =>
+            {
+                if (expand.IsChecked == open)
+                {
+                    clip.BeginAnimation(HeightProperty, null);
+                    clip.Height = double.NaN;
+                    if (!open)
+                    {
+                        clip.Visibility = Visibility.Collapsed;
+                    }
+                }
+            };
+            clip.BeginAnimation(HeightProperty, animation);
+        }
+
+        private static bool InControl(DependencyObject element, DependencyObject root)
+        {
+            while (element != null && element != root)
+            {
+                if (element is ButtonBase || element is ComboBox || element is TextBoxBase)
+                {
+                    return true;
+                }
+
+                element = element is Visual || element is Visual3D ? VisualTreeHelper.GetParent(element) : LogicalTreeHelper.GetParent(element);
+            }
+
+            return false;
         }
 
         private const string HeadingTag = "Heading";
@@ -511,17 +566,15 @@ namespace Fluent11Helper
 
         private static TabItem Tab(string header, FrameworkElement content)
         {
-            return new TabItem
+            var scroller = new ScrollViewer
             {
-                Header = header,
-                Content = new ScrollViewer
-                {
-                    Content = LimitWidth(content, 1200),
-                    Padding = new Thickness(0, 8, 0, 0),
-                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
-                }
+                Content = LimitWidth(content, 1200),
+                Padding = new Thickness(0, 8, 16, 0),
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
+            scroller.SetResourceReference(StyleProperty, "MenuScrollViewer");
+            return new TabItem { Header = header, Content = scroller };
         }
 
         private static Grid LimitWidth(FrameworkElement content, double maxWidth)

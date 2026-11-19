@@ -225,9 +225,13 @@ namespace Fluent11Helper
                 settings.ScreenshotThumbs = items;
             }
 
-            settings.ScreenshotStripTitle = items.Any(a => !a.IsTrailer)
-                ? Application.Current?.TryFindResource("LOC_ScreenshotUtilities_ControlLabel") as string ?? "Screenshots"
-                : items.Count > 0 ? "Trailer" : string.Empty;
+            var hasShots = items.Any(a => !a.IsTrailer);
+            var hasTrailer = items.Any(a => a.IsTrailer);
+            settings.ScreenshotStripTitle = hasShots && hasTrailer
+                ? "Media"
+                : hasShots
+                    ? Application.Current?.TryFindResource("LOC_ScreenshotUtilities_ControlLabel") as string ?? "Screenshots"
+                    : hasTrailer ? "Trailer" : string.Empty;
         }
 
         private static IEnumerable Sorted(IEnumerable groups)
@@ -248,10 +252,23 @@ namespace Fluent11Helper
         private static List<ShotThumb> Flatten(IEnumerable groups)
         {
             var items = new List<ShotThumb>();
+            var limit = settings.ScreenshotLimit;
             foreach (var group in groups?.Cast<object>() ?? Enumerable.Empty<object>())
             {
-                foreach (var shot in (Reflect.GetMember(group, "Screenshots") as IEnumerable)?.Cast<object>() ?? Enumerable.Empty<object>())
+                var shots = (Reflect.GetMember(group, "Screenshots") as IEnumerable)?.Cast<object>() ?? Enumerable.Empty<object>();
+                var source = Reflect.GetMember(Reflect.GetMember(group, "Provider"), "Name") as string;
+                if (settings.ScreenshotOrder == 1)
                 {
+                    shots = shots.OrderByDescending(FileDate).ToList();
+                }
+
+                foreach (var shot in shots)
+                {
+                    if (limit > 0 && items.Count >= limit)
+                    {
+                        return items;
+                    }
+
                     var path = Reflect.GetMember(shot, "DisplayThumbnail") as string;
                     if (string.IsNullOrEmpty(path))
                     {
@@ -265,12 +282,26 @@ namespace Fluent11Helper
                         Path = path,
                         FullPath = string.IsNullOrEmpty(full) ? path : full,
                         IsVideo = isVideo,
+                        Source = source,
                         Image = Cached(path)
                     });
                 }
             }
 
             return items;
+        }
+
+        private static DateTime FileDate(object shot)
+        {
+            try
+            {
+                var path = Reflect.GetMember(shot, true.Equals(Reflect.GetMember(shot, "IsVideo")) ? "VideoPath" : "DisplayPath") as string;
+                return string.IsNullOrEmpty(path) || IsWeb(path) || !File.Exists(path) ? DateTime.MinValue : File.GetLastWriteTimeUtc(path);
+            }
+            catch
+            {
+                return DateTime.MinValue;
+            }
         }
 
         private static bool IsWeb(string path)
@@ -619,7 +650,7 @@ namespace Fluent11Helper
                 return;
             }
 
-            var count = Math.Max(1, Math.Floor((available + Gap) / (MinWidth + Gap)));
+            var count = Math.Max(2, Math.Floor((available + Gap) / (MinWidth + Gap)));
             var width = Math.Floor((available - (count - 1) * Gap) / count);
             scroller.Resources["Fluent11ShotWidth"] = width;
             scroller.Resources["Fluent11ShotHeight"] = Math.Round(width * 9 / 16);
@@ -759,5 +790,6 @@ namespace Fluent11Helper
         public bool IsTrailer { get; set; }
         internal string Path { get; set; }
         internal string FullPath { get; set; }
+        internal string Source { get; set; }
     }
 }

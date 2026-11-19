@@ -13,10 +13,26 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type LibraryGridView}">
-                    <Grid Background="{TemplateBinding Background}"
+                    <Grid x:Name="Fluent11GridRoot" Background="{TemplateBinding Background}"
                           d:DesignWidth="1280" d:DesignHeight="960"
                           d:DataContext="{x:Static DesignMainViewModel.DesignIntance}">
                     <DockPanel x:Name="GridLayer">
+                        <FrameworkElement DockPanel.Dock="Right" Width="{Binding ActualWidth, ElementName=OverviewHost}">
+                            <FrameworkElement.Style>
+                                <Style TargetType="FrameworkElement">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{PluginSettings Plugin=Fluent11Helper, Path=GridSidePanel, FallbackValue=False}" Value="True" />
+                                                <Condition Binding="{PluginSettings Plugin=Fluent11Helper, Path=GridOverlayActive, FallbackValue=False}" Value="False" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </FrameworkElement.Style>
+                        </FrameworkElement>
                         <Grid DockPanel.Dock="Left">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*" />
@@ -254,6 +270,15 @@
                             <Style TargetType="Grid">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{PluginSettings Plugin=Fluent11Helper, Path=GridSidePanel, FallbackValue=False}" Value="True" />
+                                            <Condition Binding="{PluginSettings Plugin=Fluent11Helper, Path=GridOverlayActive, FallbackValue=False}" Value="False" />
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                        <Setter Property="Width" Value="{Binding ActualWidth, ElementName=Fluent11GridRoot, Converter={StaticResource MathConverter}, ConverterParameter='Min(760,Max(480,x*0.38))'}" />
+                                    </MultiDataTrigger>
                                     <DataTrigger Binding="{PluginSettings Plugin=Fluent11Helper, Path=GridOverlayActive, FallbackValue=False}" Value="True">
                                         <Setter Property="Visibility" Value="{Binding Visibility, ElementName=PART_ControlGameView}" />
                                         <Setter Property="MaxWidth" Value="{Binding ActualWidth, ElementName=GridLayer, Converter={StaticResource MathConverter}, ConverterParameter='Min(1366,Max(960,x*0.6))'}" />
@@ -363,6 +388,22 @@
                                 </Style.Triggers>
                             </Style>
                         </Grid.Resources>
+                        <Border x:Name="SidePanelLine" BorderBrush="{DynamicResource PanelSeparatorBrush}" BorderThickness="0,0,1,0"
+                                CornerRadius="{DynamicResource ControlCornerRadius}" Width="8" Margin="-7,0,0,0"
+                                HorizontalAlignment="Left" IsHitTestVisible="False">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Settings ShowPanelSeparators}" Value="False">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{PluginSettings Plugin=Fluent11Helper, Path=GridOverlayActive, FallbackValue=False}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
                         <Border x:Name="OverlayShadow" Style="{DynamicResource PopupShadow}" Visibility="Collapsed" />
                         <Border x:Name="OverlayCard" Style="{DynamicResource PopupBorder}" Visibility="Collapsed" />
                         <Border x:Name="OverlayFullCard" Background="{DynamicResource LayerBrush}" CornerRadius="7,0,0,0" Visibility="Collapsed" />

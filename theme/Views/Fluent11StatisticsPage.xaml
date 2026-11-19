@@ -244,29 +244,37 @@
                         <Border x:Name="FlyoutShadow" Style="{DynamicResource PopupShadow}" />
                         <Border x:Name="FlyoutCard" Style="{DynamicResource PopupBorder}" Width="420" Padding="16">
                             <StackPanel>
-                                <DockPanel>
-                                    <Border Width="{DynamicResource Fluent11FlyoutCoverWidth}" Height="48" Margin="0,0,12,0" CornerRadius="4"
-                                            VerticalAlignment="Top">
-                                        <Border.Background>
-                                            <ImageBrush ImageSource="{Binding Game.Cover, Converter={StaticResource ImageStringToImageConverterCached}}"
-                                                        Stretch="UniformToFill" RenderOptions.BitmapScalingMode="Fant" />
-                                        </Border.Background>
-                                        <Border CornerRadius="4" Style="{DynamicResource ImageStrokeOverlay}" />
-                                    </Border>
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Name}" Style="{StaticResource StatsText}" TextTrimming="None" TextWrapping="Wrap"
-                                                   MaxHeight="40" FontWeight="SemiBold" />
-                                        <TextBlock Text="{Binding SubText}" Style="{StaticResource StatsCaption}" Margin="0,2,0,0" />
-                                    </StackPanel>
-                                </DockPanel>
-
-                                <DockPanel Margin="0,12,0,10">
-                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource StatsCaption}" VerticalAlignment="Bottom" Margin="12,0,0,3"
-                                               ToolTip="Share of your total playtime and rank by time played">
-                                        <Run Text="{Binding ShareText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding RankText, Mode=OneWay}" />
-                                    </TextBlock>
-                                    <TextBlock Text="{Binding PlaytimeText}" Style="{StaticResource StatsText}"
-                                               FontSize="{DynamicResource FontSizeLarger}" FontWeight="SemiBold" />
+                                <DockPanel Margin="0,0,0,12">
+                                    <Grid Width="{DynamicResource Fluent11FlyoutCoverWidth}" Height="88" Margin="0,0,16,0" VerticalAlignment="Top"
+                                          Clip="{DynamicResource Fluent11FlyoutCoverClip}">
+                                        <Image Source="{Binding Game.Cover, Converter={StaticResource ImageStringToImageConverterCached}}"
+                                               Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               RenderOptions.BitmapScalingMode="Fant" />
+                                        <Border CornerRadius="6" Style="{DynamicResource ImageStrokeOverlayOnImage}" />
+                                    </Grid>
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Top">
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource StatsText}" TextTrimming="None" TextWrapping="Wrap"
+                                                       MaxHeight="40" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding SubText}" Style="{StaticResource StatsCaption}" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                        <StackPanel VerticalAlignment="Bottom" Margin="0,8,0,0">
+                                            <TextBlock Text="{Binding PlaytimeText}" Style="{StaticResource StatsText}"
+                                                       FontSize="24" FontWeight="SemiBold" />
+                                            <TextBlock ToolTip="Share of your total playtime and rank by time played">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource StatsCaption}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ShareText}" Value="{x:Null}">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                                <Run Text="{Binding ShareText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding RankText, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </DockPanel>
                                 </DockPanel>
 
                                 <UniformGrid Columns="3">
@@ -297,6 +305,30 @@
                                 </UniformGrid>
 
                                 <Grid Margin="0,10,0,0">
+                                    <Grid.Resources>
+                                        <Style x:Key="FlyoutBarLeft" TargetType="StackPanel">
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding HasTimeToBeat}" Value="True" />
+                                                        <Condition Binding="{Binding HasAchievements}" Value="True" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Margin" Value="0,0,16,0" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                        <Style x:Key="FlyoutBarRight" TargetType="StackPanel">
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding HasTimeToBeat}" Value="True" />
+                                                        <Condition Binding="{Binding HasAchievements}" Value="True" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Margin" Value="16,0,0,0" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Grid.Resources>
                                     <Grid.Style>
                                         <Style TargetType="Grid">
                                             <Style.Triggers>
@@ -311,7 +343,7 @@
                                         </Style>
                                     </Grid.Style>
                                     <UniformGrid Rows="1">
-                                        <StackPanel Margin="0,0,8,0"
+                                        <StackPanel Style="{StaticResource FlyoutBarLeft}"
                                                     Visibility="{Binding HasTimeToBeat, Converter={StaticResource BooleanToVisibilityConverter}}">
                                             <DockPanel>
                                                 <TextBlock DockPanel.Dock="Right" Text="{Binding TimeToBeatPercentText}" Style="{StaticResource StatsText}" />
@@ -321,7 +353,7 @@
                                                          Value="{Binding TimeToBeatPercent, Mode=OneWay}" />
                                             <TextBlock Text="{Binding TimeToBeatText}" Style="{StaticResource StatsCaption}" />
                                         </StackPanel>
-                                        <StackPanel Margin="8,0,0,0"
+                                        <StackPanel Style="{StaticResource FlyoutBarRight}"
                                                     Visibility="{Binding HasAchievements, Converter={StaticResource BooleanToVisibilityConverter}}">
                                             <DockPanel>
                                                 <TextBlock DockPanel.Dock="Right" Text="{Binding AchievementsPercentText}" Style="{StaticResource StatsText}" />

@@ -2,6 +2,7 @@ using Playnite.SDK;
 using System;
 using System.Collections;
 using System.Reflection;
+using System.Windows.Input;
 
 namespace Fluent11Helper
 {
@@ -27,6 +28,8 @@ namespace Fluent11Helper
         }
 
         public static object AppSettings => Reflect.GetMember(App, "AppSettings");
+
+        public static ICommand RestartCommand => Reflect.GetMember(Reflect.GetMember(App, "MainModel"), "RestartApp") as ICommand;
 
         public static string CurrentThemeDirectory
         {

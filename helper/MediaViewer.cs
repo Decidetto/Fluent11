@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
@@ -33,6 +35,12 @@ namespace Fluent11Helper
         }
 
         public static bool IsOpen => current != null;
+
+        public static void SchemeChanged()
+        {
+            var session = current;
+            session?.Dispatcher.BeginInvoke(new Action(session.RefreshBackdrop), DispatcherPriority.ContextIdle);
+        }
 
         public static string TrailerPath(IPlayniteAPI api, Guid gameId, bool micro)
         {
@@ -119,12 +127,18 @@ namespace Fluent11Helper
         {
             private const double Gap = 48;
             private const double MinWidth = 960;
-            private const double MaxWidth = 1366;
+            private const double MaxWidth = 1600;
             private const double WidthShare = 0.6;
             private const double Aspect = 16.0 / 9;
             private const double SeekStep = 5;
             private const double VolumeStep = 0.1;
             private const double VideoBarWidth = 640;
+            private const double ArrowGap = 16;
+            private const double BelowGap = 16;
+            private const int BackdropWidth = 64;
+            private const double CaptureWidth = 256;
+            private const int BackdropBlurRadius = 2;
+            private const int BackdropBlurPasses = 3;
             private static readonly TimeSpan HideDelay = TimeSpan.FromSeconds(2.5);
             private static readonly Duration GrowDuration = new Duration(TimeSpan.FromMilliseconds(250));
             private static readonly Duration FadeDuration = new Duration(TimeSpan.FromMilliseconds(150));
@@ -137,6 +151,8 @@ namespace Fluent11Helper
             private readonly HostAdorner adorner;
             private readonly Grid root;
             private readonly Grid frame;
+            private readonly Grid backdrop;
+            private readonly Image backdropImage;
             private readonly Border dim;
             private readonly Border bar;
             private readonly Image picture;
@@ -148,6 +164,23 @@ namespace Fluent11Helper
             private readonly Button fullScreen;
             private readonly Button previous;
             private readonly Button next;
+            private readonly Button previousOutside;
+            private readonly Button nextOutside;
+            private readonly FrameworkElement below;
+            private readonly TextBlock title;
+            private readonly FrameworkElement pill;
+            private readonly FrameworkElement counterOutside;
+            private readonly TextBlock counterCurrent;
+            private readonly TextBlock counterTotal;
+            private readonly FrameworkElement belowDivider;
+            private readonly Button fullScreenOutside;
+            private readonly FrameworkElement fullPill;
+            private readonly FrameworkElement fullCounter;
+            private readonly TextBlock fullCounterCurrent;
+            private readonly TextBlock fullCounterTotal;
+            private readonly FrameworkElement fullDivider;
+            private readonly FrameworkElement caption;
+            private readonly Button captionMaximize;
             private readonly Slider seek;
             private readonly Slider volumeSlider;
             private readonly TextBlock time;
@@ -176,6 +209,8 @@ namespace Fluent11Helper
 
             private bool IsVideoShown => Current.IsVideo && error.Visibility != Visibility.Visible;
 
+            public Dispatcher Dispatcher => root.Dispatcher;
+
             public Session(FrameworkElement tile, List<ShotThumb> items, int index)
             {
                 this.items = items;
@@ -196,6 +231,8 @@ namespace Fluent11Helper
                 }
 
                 frame = (Grid)root.FindName("Frame");
+                backdrop = (Grid)root.FindName("Backdrop");
+                backdropImage = (Image)root.FindName("BackdropImage");
                 dim = (Border)root.FindName("Dim");
                 bar = (Border)root.FindName("Bar");
                 picture = (Image)root.FindName("Picture");
@@ -211,6 +248,23 @@ namespace Fluent11Helper
                 volumeSlider = (Slider)root.FindName("Volume");
                 time = (TextBlock)root.FindName("Time");
                 counter = (TextBlock)root.FindName("Counter");
+                previousOutside = (Button)root.FindName("PreviousOutside");
+                nextOutside = (Button)root.FindName("NextOutside");
+                below = (FrameworkElement)root.FindName("Below");
+                title = (TextBlock)root.FindName("Title");
+                pill = (FrameworkElement)root.FindName("Pill");
+                counterOutside = (FrameworkElement)root.FindName("CounterOutside");
+                counterCurrent = (TextBlock)root.FindName("CounterCurrent");
+                counterTotal = (TextBlock)root.FindName("CounterTotal");
+                belowDivider = (FrameworkElement)root.FindName("BelowDivider");
+                fullScreenOutside = (Button)root.FindName("FullScreenOutside");
+                fullPill = (FrameworkElement)root.FindName("FullPill");
+                fullCounter = (FrameworkElement)root.FindName("FullCounter");
+                fullCounterCurrent = (TextBlock)root.FindName("FullCounterCurrent");
+                fullCounterTotal = (TextBlock)root.FindName("FullCounterTotal");
+                fullDivider = (FrameworkElement)root.FindName("FullDivider");
+                caption = (FrameworkElement)root.FindName("Caption");
+                captionMaximize = (Button)root.FindName("CaptionMaximize");
                 videoControls = new[] { playPause, seek, time, (FrameworkElement)root.FindName("VolumePanel") };
                 var openExternal = (Button)root.FindName("OpenExternal");
                 cornerRadius = (Application.Current?.TryFindResource("CardCornerRadius") as CornerRadius?)?.TopLeft ?? 8;
@@ -223,6 +277,17 @@ namespace Fluent11Helper
                 fullScreen.Click += (s, e) => ToggleFullScreen();
                 previous.Click += (s, e) => Go(-1);
                 next.Click += (s, e) => Go(1);
+                previousOutside.Click += (s, e) => Go(-1);
+                nextOutside.Click += (s, e) => Go(1);
+                fullScreenOutside.Click += (s, e) => ToggleFullScreen();
+                ((Button)root.FindName("FullScreenExit")).Click += (s, e) => ToggleFullScreen();
+                ((Button)root.FindName("CaptionMinimize")).Click += (s, e) => PressWindowButton("PART_ButtonMinimize");
+                captionMaximize.Click += (s, e) => PressWindowButton("PART_ButtonMaximize");
+                ((Button)root.FindName("CaptionClose")).Click += (s, e) =>
+                {
+                    Close();
+                    PressWindowButton("PART_ButtonClose");
+                };
                 if (openExternal != null)
                 {
                     openExternal.Click += (s, e) => OpenExternal();
@@ -259,7 +324,8 @@ namespace Fluent11Helper
                 hideTimer.Tick += (s, e) =>
                 {
                     hideTimer.Stop();
-                    if (playing && !dragging && !bar.IsMouseOver && !previous.IsMouseOver && !next.IsMouseOver)
+                    if (playing && !dragging && !bar.IsMouseOver && !previous.IsMouseOver && !next.IsMouseOver
+                        && !previousOutside.IsMouseOver && !nextOutside.IsMouseOver && !below.IsMouseOver && !fullPill.IsMouseOver)
                     {
                         HideBar();
                     }
@@ -270,6 +336,16 @@ namespace Fluent11Helper
                 UpdateMuteGlyph();
 
                 previousFocus = Keyboard.FocusedElement;
+                var snapshot = Snapshot(adorned);
+                if (snapshot != null)
+                {
+                    backdropImage.Source = snapshot;
+                }
+                else
+                {
+                    dim.SetResourceReference(Border.BackgroundProperty, "OverlayDimBrush");
+                }
+
                 adorner = new HostAdorner(adorned, root);
                 layer.Add(adorner);
                 Layout();
@@ -345,11 +421,24 @@ namespace Fluent11Helper
                     LoadOriginal();
                 }
 
+                if (item.IsVideo)
+                {
+                    frame.SetResourceReference(Panel.BackgroundProperty, "VideoBackgroundBrush");
+                }
+                else
+                {
+                    frame.Background = null;
+                }
+
                 SlideIn(item.IsVideo ? (UIElement)video : picture, direction, shown, leavingVideo);
                 UpdatePlayGlyph();
-                UpdateArrows();
                 counter.Text = items.Count > 1 ? (index + 1) + " / " + items.Count : string.Empty;
-                counter.Visibility = items.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+                counterCurrent.Text = (index + 1).ToString();
+                counterTotal.Text = " / " + items.Count;
+                fullCounterCurrent.Text = counterCurrent.Text;
+                fullCounterTotal.Text = counterTotal.Text;
+                title.Text = TitleOf(index);
+                UpdateChrome();
                 if (showBar)
                 {
                     ShowBar();
@@ -420,11 +509,50 @@ namespace Fluent11Helper
                 outgoing.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(-direction * width, SlideDuration) { EasingFunction = ease });
             }
 
-            private void UpdateArrows()
+            private void UpdateChrome()
             {
+                var full = fullScreenWindow != null;
                 var several = items.Count > 1;
-                previous.Visibility = !several ? Visibility.Collapsed : index > 0 ? Visibility.Visible : Visibility.Hidden;
-                next.Visibility = !several ? Visibility.Collapsed : index < items.Count - 1 ? Visibility.Visible : Visibility.Hidden;
+                var previousVisibility = !several ? Visibility.Collapsed : index > 0 ? Visibility.Visible : Visibility.Hidden;
+                var nextVisibility = !several ? Visibility.Collapsed : index < items.Count - 1 ? Visibility.Visible : Visibility.Hidden;
+                previous.Visibility = full ? previousVisibility : Visibility.Collapsed;
+                next.Visibility = full ? nextVisibility : Visibility.Collapsed;
+                previousOutside.Visibility = full ? Visibility.Collapsed : previousVisibility;
+                nextOutside.Visibility = full ? Visibility.Collapsed : nextVisibility;
+                counter.Visibility = full && several ? Visibility.Visible : Visibility.Collapsed;
+                bar.Visibility = Current.IsVideo ? Visibility.Visible : Visibility.Collapsed;
+                fullPill.Visibility = full && !Current.IsVideo ? Visibility.Visible : Visibility.Collapsed;
+                fullCounter.Visibility = several ? Visibility.Visible : Visibility.Collapsed;
+                fullDivider.Visibility = several ? Visibility.Visible : Visibility.Collapsed;
+
+                var showCounter = !full && several;
+                var showFullScreen = !full && !Current.IsVideo;
+                counterOutside.Visibility = showCounter ? Visibility.Visible : Visibility.Collapsed;
+                fullScreenOutside.Visibility = showFullScreen ? Visibility.Visible : Visibility.Collapsed;
+                belowDivider.Visibility = showCounter && showFullScreen ? Visibility.Visible : Visibility.Collapsed;
+                pill.Visibility = showCounter || showFullScreen ? Visibility.Visible : Visibility.Collapsed;
+                below.Visibility = full ? Visibility.Collapsed : Visibility.Visible;
+            }
+
+            private string TitleOf(int i)
+            {
+                var item = items[i];
+                if (item.IsTrailer)
+                {
+                    return "Trailer";
+                }
+
+                var number = 0;
+                for (var j = 0; j <= i; j++)
+                {
+                    if (!items[j].IsTrailer && items[j].IsVideo == item.IsVideo && items[j].Source == item.Source)
+                    {
+                        number++;
+                    }
+                }
+
+                var name = (item.IsVideo ? "Video " : "Screenshot ") + number;
+                return string.IsNullOrEmpty(item.Source) ? name : name + " · " + item.Source;
             }
 
             private void SetVideoControls(bool isVideo)
@@ -552,13 +680,153 @@ namespace Fluent11Helper
                 frame.Width = size.Width;
                 frame.Height = size.Height;
                 frame.Clip = new RectangleGeometry(new Rect(size), radius, radius);
+
+                var arrowOffset = size.Width + 2 * ArrowGap + previousOutside.Width;
+                previousOutside.Margin = new Thickness(0, 0, arrowOffset, 0);
+                nextOutside.Margin = new Thickness(arrowOffset, 0, 0, 0);
+                below.Margin = new Thickness(0, size.Height + 2 * BelowGap + below.Height, 0, 0);
+
+                var buttons = CaptionButtons();
+                caption.Visibility = buttons.HasValue ? Visibility.Visible : Visibility.Collapsed;
+                if (buttons.HasValue)
+                {
+                    caption.Margin = new Thickness(0, buttons.Value.Top, Math.Max(0, adorned.ActualWidth - buttons.Value.Right), 0);
+                    captionMaximize.Content = window.WindowState == WindowState.Maximized ? "" : "";
+                }
+            }
+
+            private Rect? CaptionButtons()
+            {
+                Rect? bounds = null;
+                foreach (var name in new[] { "PART_ButtonMinimize", "PART_ButtonMaximize", "PART_ButtonClose" })
+                {
+                    if (window.Template?.FindName(name, window) is FrameworkElement button && button.IsVisible && button.ActualWidth > 0)
+                    {
+                        var rect = button.TransformToVisual(adorned).TransformBounds(new Rect(button.RenderSize));
+                        bounds = bounds.HasValue ? Rect.Union(bounds.Value, rect) : rect;
+                    }
+                }
+
+                return bounds;
+            }
+
+            public void RefreshBackdrop()
+            {
+                var snapshot = closed ? null : Snapshot(adorned);
+                if (snapshot != null)
+                {
+                    backdropImage.Source = snapshot;
+                }
+            }
+
+            private void PressWindowButton(string name)
+            {
+                if (window.Template?.FindName(name, window) is Button button
+                    && new ButtonAutomationPeer(button).GetPattern(PatternInterface.Invoke) is IInvokeProvider invoker)
+                {
+                    invoker.Invoke();
+                }
+            }
+
+            private static BitmapSource Snapshot(FrameworkElement element)
+            {
+                try
+                {
+                    var width = element.ActualWidth;
+                    var height = element.ActualHeight;
+                    if (width < 1 || height < 1)
+                    {
+                        return null;
+                    }
+
+                    var scale = Math.Min(1, CaptureWidth / width);
+                    var reduced = new Size(Math.Max(1, Math.Ceiling(width * scale)), Math.Max(1, Math.Ceiling(height * scale)));
+                    var background = Application.Current?.TryFindResource("WindowBackgroundColor") as Color? ?? Colors.Gray;
+                    var brush = new VisualBrush(element)
+                    {
+                        Viewbox = new Rect(0, 0, width, height),
+                        ViewboxUnits = BrushMappingMode.Absolute,
+                        Stretch = Stretch.Fill
+                    };
+                    var capture = Render(reduced, dc =>
+                    {
+                        dc.DrawRectangle(new SolidColorBrush(background), null, new Rect(reduced));
+                        dc.DrawRectangle(brush, null, new Rect(reduced));
+                    });
+
+                    var small = new Size(BackdropWidth, Math.Max(1, Math.Round(BackdropWidth * height / width)));
+                    var result = Blur(Render(small, dc => dc.DrawImage(capture, new Rect(small))));
+                    result.Freeze();
+                    return result;
+                }
+                catch (Exception e)
+                {
+                    logger.Warn($"Fluent 11: viewer backdrop failed: {e.Message}");
+                    return null;
+                }
+            }
+
+            private static BitmapSource Blur(BitmapSource source)
+            {
+                var width = source.PixelWidth;
+                var height = source.PixelHeight;
+                var stride = width * 4;
+                var pixels = new byte[stride * height];
+                source.CopyPixels(pixels, stride, 0);
+                var buffer = new byte[pixels.Length];
+                for (var pass = 0; pass < BackdropBlurPasses; pass++)
+                {
+                    BoxBlur(pixels, buffer, width, height, 4, stride);
+                    BoxBlur(buffer, pixels, height, width, stride, 4);
+                }
+
+                return BitmapSource.Create(width, height, 96, 96, PixelFormats.Pbgra32, null, pixels, stride);
+            }
+
+            private static void BoxBlur(byte[] from, byte[] to, int length, int lines, int step, int lineStep)
+            {
+                for (var line = 0; line < lines; line++)
+                {
+                    var start = line * lineStep;
+                    for (var channel = 0; channel < 4; channel++)
+                    {
+                        var sum = 0;
+                        for (var k = -BackdropBlurRadius; k <= BackdropBlurRadius; k++)
+                        {
+                            sum += from[start + Math.Min(length - 1, Math.Max(0, k)) * step + channel];
+                        }
+
+                        for (var i = 0; i < length; i++)
+                        {
+                            to[start + i * step + channel] = (byte)((sum + BackdropBlurRadius) / (2 * BackdropBlurRadius + 1));
+                            sum += from[start + Math.Min(length - 1, i + BackdropBlurRadius + 1) * step + channel]
+                                - from[start + Math.Max(0, i - BackdropBlurRadius) * step + channel];
+                        }
+                    }
+                }
+            }
+
+            private static RenderTargetBitmap Render(Size size, Action<DrawingContext> draw)
+            {
+                var visual = new DrawingVisual();
+                RenderOptions.SetBitmapScalingMode(visual, BitmapScalingMode.HighQuality);
+                using (var dc = visual.RenderOpen())
+                {
+                    draw(dc);
+                }
+
+                var bitmap = new RenderTargetBitmap((int)size.Width, (int)size.Height, 96, 96, PixelFormats.Pbgra32);
+                bitmap.Render(visual);
+                return bitmap;
             }
 
             private Size WindowFrameSize()
             {
+                var horizontalSpace = 2 * (Gap + ArrowGap + previousOutside.Width);
+                var verticalSpace = 2 * (Gap + BelowGap + below.Height);
                 var limit = Math.Min(MaxWidth, Math.Max(MinWidth, adorned.ActualWidth * WidthShare));
-                var width = Math.Min(limit, Math.Max(0, adorned.ActualWidth - 2 * Gap));
-                return FitAspect(width, Math.Max(0, adorned.ActualHeight - 2 * Gap));
+                var width = Math.Min(limit, Math.Max(0, adorned.ActualWidth - horizontalSpace));
+                return FitAspect(width, Math.Max(0, adorned.ActualHeight - verticalSpace));
             }
 
             private static Size FitAspect(double width, double height)
@@ -589,7 +857,7 @@ namespace Fluent11Helper
                         ShowBar();
                     }
                 });
-                dim.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, GrowDuration));
+                backdrop.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, GrowDuration));
             }
 
             private void MoveFrame(Rect away, Rect to, Action done)
@@ -841,7 +1109,7 @@ namespace Fluent11Helper
             {
                 e.Handled = true;
                 var source = e.OriginalSource as DependencyObject;
-                if (IsInside(source, bar) || IsInside(source, previous) || IsInside(source, next) || error.Visibility == Visibility.Visible)
+                if (IsInside(source, bar) || IsInside(source, fullPill) || IsInside(source, previous) || IsInside(source, next) || error.Visibility == Visibility.Visible)
                 {
                     return;
                 }
@@ -959,7 +1227,7 @@ namespace Fluent11Helper
                 if (!barVisible)
                 {
                     barVisible = true;
-                    foreach (var element in new UIElement[] { bar, previous, next })
+                    foreach (var element in new UIElement[] { bar, fullPill, previous, next, previousOutside, nextOutside, below })
                     {
                         element.IsHitTestVisible = true;
                         Fade(element, 1);
@@ -974,7 +1242,7 @@ namespace Fluent11Helper
             private void HideBar()
             {
                 barVisible = false;
-                foreach (var element in new UIElement[] { bar, previous, next })
+                foreach (var element in new UIElement[] { bar, fullPill, previous, next, previousOutside, nextOutside, below })
                 {
                     element.IsHitTestVisible = false;
                     Fade(element, 0);
@@ -1072,6 +1340,7 @@ namespace Fluent11Helper
                 };
 
                 fullScreenWindow = fullWindow;
+                UpdateChrome();
                 lastMouse = null;
                 fullWindow.Show();
                 fullWindow.Activate();
@@ -1145,6 +1414,11 @@ namespace Fluent11Helper
                 }
 
                 fullScreenWindow = null;
+                if (!closed)
+                {
+                    UpdateChrome();
+                }
+
                 later = later && fullWindow.IsLoaded && !closed;
                 fullWindow.Content = later ? StillImage() : null;
                 RemoveStandIn();

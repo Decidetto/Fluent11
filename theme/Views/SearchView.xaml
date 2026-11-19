@@ -320,7 +320,7 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Margin" Value="10,0,10,10" />
         <Setter Property="Padding" Value="0,4" />
-        <Setter Property="MaxHeight" Value="600" />
+        <Setter Property="MaxHeight" Value="400" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListBox}">
@@ -418,6 +418,9 @@
             <Trigger Property="HasItems" Value="False">
                 <Setter Property="Visibility" Value="Collapsed" />
             </Trigger>
+            <DataTrigger Binding="{Binding SizeToContent, RelativeSource={RelativeSource AncestorType=Window}}" Value="Manual">
+                <Setter Property="MaxHeight" Value="Infinity" />
+            </DataTrigger>
         </Style.Triggers>
     </Style>
 </ResourceDictionary>

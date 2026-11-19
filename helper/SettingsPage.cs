@@ -170,6 +170,24 @@ namespace Fluent11Helper
             saveTimer.Start();
         }
 
+        public static void Restart()
+        {
+            try
+            {
+                saveTimer?.Stop();
+                SaveIfChanged();
+                var restart = PlayniteInternals.RestartCommand;
+                if (restart != null && restart.CanExecute(null))
+                {
+                    restart.Execute(null);
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Error(e, "Fluent 11: failed to restart Playnite.");
+            }
+        }
+
         private static string SavedState()
         {
             return Serialization.ToJson(model.Settings) + "|" + model.Settings.ShowHltbEntry;

@@ -9,6 +9,18 @@
                 <ControlTemplate TargetType="{x:Type GroupItem}">
                     <ExpanderEx BorderThickness="0" SaveGameGroupId="{Binding Name, Mode=OneWay}" Margin="0,12,0,0"
                                 IsExpanded="True">
+                        <ExpanderEx.Resources>
+                            <Style x:Key="FluentFocusVisual">
+                                <Setter Property="Control.Template">
+                                    <Setter.Value>
+                                        <ControlTemplate>
+                                            <Border BorderThickness="2" CornerRadius="{DynamicResource ControlCornerRadius}"
+                                                    BorderBrush="{DynamicResource TextBrush}" SnapsToDevicePixels="True" />
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ExpanderEx.Resources>
                         <ExpanderEx.Header>                            
                             <DockPanel Background="Transparent">
                                 <DockPanel.ContextMenu>

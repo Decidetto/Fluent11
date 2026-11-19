@@ -56,6 +56,12 @@ namespace Fluent11Helper
                 return;
             }
 
+            if (name == "DatabaseFieldsManagerWindow")
+            {
+                window.Dispatcher.BeginInvoke(new Action(() => ApplyLibraryManager(window)), DispatcherPriority.Loaded);
+                return;
+            }
+
             if (name != "SettingsWindow" && name != "AddonsWindow")
             {
                 return;
@@ -126,12 +132,39 @@ namespace Fluent11Helper
                 content.Child = panel;
 
                 var tree = (TreeView)nav.Child;
+                DisableSeparators(tree);
                 tree.SelectedItemChanged += (s, e) => UpdateHeader(header, tree);
                 UpdateHeader(header, tree);
             }
             catch (Exception e)
             {
                 logger.Error(e, "Fluent 11: failed to restyle settings window.");
+            }
+        }
+
+        private static void ApplyLibraryManager(Window window)
+        {
+            try
+            {
+                var tabs = (window.Content as Grid)?.Children.OfType<TabControl>().FirstOrDefault();
+                if (tabs == null
+                    || !(tabs.Template?.FindName("ContentPanel", tabs) is Border content)
+                    || !(tabs.Template.FindName("HeaderBorder", tabs) is Border header))
+                {
+                    logger.Warn("Fluent 11: unexpected layout of the library manager, left unchanged.");
+                    return;
+                }
+
+                header.Background = Brushes.Transparent;
+                header.BorderThickness = new Thickness(0);
+                content.SetResourceReference(Border.BackgroundProperty, "ContentLayerBrush");
+                content.SetResourceReference(Border.BorderBrushProperty, "ControlStrokeBrush");
+                content.BorderThickness = new Thickness(1, 1, 0, 0);
+                content.CornerRadius = new CornerRadius(8, 0, 0, 0);
+            }
+            catch (Exception e)
+            {
+                logger.Error(e, "Fluent 11: failed to restyle the library manager.");
             }
         }
 
@@ -615,6 +648,19 @@ namespace Fluent11Helper
             header.Inlines.Add(new Run(current));
         }
 
+        private static void DisableSeparators(TreeView tree)
+        {
+            foreach (var item in tree.Items)
+            {
+                var container = item as TreeViewItem ?? tree.ItemContainerGenerator.ContainerFromItem(item) as TreeViewItem;
+                if (container != null && (item is Separator || container.Header is Separator))
+                {
+                    container.Focusable = false;
+                    container.IsHitTestVisible = false;
+                }
+            }
+        }
+
         private static TreeViewItem Container(ItemsControl parent, object item)
         {
             if (item == null)
@@ -654,6 +700,11 @@ namespace Fluent11Helper
             }
 
             var header = item.Header;
+            if (header is Separator)
+            {
+                return null;
+            }
+
             if (header is string text)
             {
                 return string.IsNullOrEmpty(item.HeaderStringFormat) ? text : string.Format(item.HeaderStringFormat, text);

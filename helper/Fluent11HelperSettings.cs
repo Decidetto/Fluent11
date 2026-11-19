@@ -64,6 +64,9 @@ namespace Fluent11Helper
         private bool showFilterButton = true;
         public bool ShowFilterButton { get => showFilterButton; set => SetValue(ref showFilterButton, value); }
 
+        private bool checkForUpdates = true;
+        public bool CheckForUpdates { get => checkForUpdates; set => SetValue(ref checkForUpdates, value); }
+
         private bool showAddonUpdateCount = true;
         public bool ShowAddonUpdateCount { get => showAddonUpdateCount; set => SetValue(ref showAddonUpdateCount, value); }
 
@@ -113,6 +116,12 @@ namespace Fluent11Helper
         private bool smootherScrolling = false;
         public bool SmootherScrolling { get => smootherScrolling; set => SetValue(ref smootherScrolling, value); }
 
+        private int screenshotLimit = 0;
+        public int ScreenshotLimit { get => screenshotLimit; set => SetValue(ref screenshotLimit, value); }
+
+        private int screenshotOrder = 0;
+        public int ScreenshotOrder { get => screenshotOrder; set => SetValue(ref screenshotOrder, value); }
+
         private bool screenshotFullScreen = true;
         public bool ScreenshotFullScreen { get => screenshotFullScreen; set => SetValue(ref screenshotFullScreen, value); }
 
@@ -120,18 +129,13 @@ namespace Fluent11Helper
         public bool ShowZoomButton { get => showZoomButton; set => SetValue(ref showZoomButton, value); }
 
         private bool gridDetailsOverlay = true;
-        public bool GridDetailsOverlay
-        {
-            get => gridDetailsOverlay;
-            set
-            {
-                SetValue(ref gridDetailsOverlay, value);
-                OnPropertyChanged(nameof(GridPlayButtonAvailable));
-            }
-        }
+        public bool GridDetailsOverlay { get => gridDetailsOverlay; set => SetValue(ref gridDetailsOverlay, value); }
 
         private bool gridOverlayFull = true;
         public bool GridOverlayFull { get => gridOverlayFull; set => SetValue(ref gridOverlayFull, value); }
+
+        private bool gridSidePanel = false;
+        public bool GridSidePanel { get => gridSidePanel; set => SetValue(ref gridSidePanel, value); }
 
         internal static bool OverlayActiveThisSession;
         [DontSerialize]
@@ -204,9 +208,6 @@ namespace Fluent11Helper
         private bool showGridPlayButton = false;
         public bool ShowGridPlayButton { get => showGridPlayButton; set => SetValue(ref showGridPlayButton, value); }
 
-        [DontSerialize]
-        public bool GridPlayButtonAvailable => !GridDetailsOverlay;
-
         private bool showAchievementsPage = true;
         public bool ShowAchievementsPage { get => showAchievementsPage; set => SetValue(ref showAchievementsPage, value); }
 
@@ -263,25 +264,27 @@ namespace Fluent11Helper
         [DontSerialize]
         public int GridDetailsIndex
         {
-            get => !GridDetailsOverlay ? 0 : GridOverlayFull ? 2 : 1;
+            get => !GridDetailsOverlay ? (GridSidePanel ? 1 : 0) : GridOverlayFull ? 3 : 2;
             set
             {
-                GridDetailsOverlay = value > 0;
-                GridOverlayFull = value == 2;
-                if (value > 0)
-                {
-                    ShowGridPlayButton = false;
-                }
-
+                GridSidePanel = value == 1;
+                GridDetailsOverlay = value > 1;
+                GridOverlayFull = value == 3;
                 OnPropertyChanged();
             }
         }
 
+        public static readonly int[] ScreenshotLimits = { 0, 10, 20, 30, 50 };
+
         [DontSerialize]
-        public int ScreenshotIndex
+        public int ScreenshotLimitIndex
         {
-            get => !ScreenshotStrip ? 0 : ScreenshotFullScreen ? 2 : 1;
-            set { ScreenshotStrip = value > 0; ScreenshotFullScreen = value == 2; OnPropertyChanged(); }
+            get => Math.Max(0, Array.IndexOf(ScreenshotLimits, ScreenshotLimit));
+            set
+            {
+                ScreenshotLimit = ScreenshotLimits[Math.Max(0, Math.Min(value, ScreenshotLimits.Length - 1))];
+                OnPropertyChanged();
+            }
         }
 
         [DontSerialize]
@@ -340,6 +343,10 @@ namespace Fluent11Helper
 
         private Fluent11HelperSettings settings;
         public Fluent11HelperSettings Settings { get => settings; set => SetValue(ref settings, value); }
+
+        public RelayCommand RestartCommand { get; } = new RelayCommand(SettingsPage.Restart);
+
+        public bool CanRestart => PlayniteInternals.RestartCommand != null;
 
         public Fluent11HelperSettingsViewModel(Fluent11Helper plugin)
         {

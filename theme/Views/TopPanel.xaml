@@ -416,7 +416,7 @@
                                 </CheckBox>
                                 <Border x:Name="PART_ElemMainMenu" Style="{StaticResource TopPanelMoreMenu}"
                                         ToolTip="Menu">
-                                    <TextBlock Text="&#xF2C7;" Style="{StaticResource TopPanelIconStyle}" Foreground="{DynamicResource TextBrush}" />
+                                    <TextBlock Text="&#xE712;" Style="{StaticResource TopPanelIconStyle}" Foreground="{DynamicResource TextBrush}" />
                                 </Border>
                             </StackPanel>
                         <Grid ClipToBounds="True">
@@ -522,6 +522,12 @@
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Settings ShowTopPanelSearchBox}" Value="False">
                                                         <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding ActualWidth, ElementName=PART_PanelMainItems}">
+                                                        <DataTrigger.Value>
+                                                            <sys:Double>0</sys:Double>
+                                                        </DataTrigger.Value>
+                                                        <Setter Property="Visibility" Value="Collapsed" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>

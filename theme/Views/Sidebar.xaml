@@ -231,7 +231,7 @@
                                             <ColumnDefinition Width="40" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="&#xF2C7;" FontFamily="{DynamicResource FluentIconFont}" FontSize="16"
+                                        <TextBlock Text="&#xE712;" FontFamily="{DynamicResource FluentIconFont}" FontSize="16"
                                                    Foreground="{DynamicResource TextBrush}"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         <TextBlock x:Name="MainMenuLabel" Grid.Column="1" Visibility="Collapsed"
@@ -316,7 +316,8 @@
                             <Setter Property="ToolTipService.IsEnabled" Value="False" TargetName="ButtonFluent11" />
                             <Setter Property="ToolTipService.IsEnabled" Value="False" TargetName="ButtonAddons" />
                             <Setter Property="ToolTipService.IsEnabled" Value="False" TargetName="ButtonSettings" />
-                            <Setter Property="Width" Value="220" TargetName="BorderContentHolder" />
+                            <Setter Property="MinWidth" Value="190" TargetName="BorderContentHolder" />
+                            <Setter Property="MaxWidth" Value="220" TargetName="BorderContentHolder" />
                             <Setter Property="Width" Value="Auto" TargetName="PART_ElemMainMenu" />
                             <Setter Property="HorizontalAlignment" Value="Stretch" TargetName="PART_ElemMainMenu" />
                             <Setter Property="Visibility" Value="Visible" TargetName="MainMenuLabel" />

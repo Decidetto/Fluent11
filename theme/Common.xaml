@@ -43,6 +43,7 @@
     <SolidColorBrush x:Key="WindowCloseHoverTextBrush" Color="{DynamicResource WindowCloseHoverTextColor}" />
     <SolidColorBrush x:Key="DialogFooterBrush" Color="{DynamicResource DialogFooterColor}" />
     <SolidColorBrush x:Key="OverlayDimBrush" Color="{DynamicResource OverlayDimColor}" />
+    <SolidColorBrush x:Key="ViewerBackdropTintBrush" Color="{DynamicResource ViewerBackdropTintColor}" />
     <SolidColorBrush x:Key="VideoBackgroundBrush" Color="{DynamicResource VideoBackgroundColor}" />
     <SolidColorBrush x:Key="VideoBarBrush" Color="{DynamicResource VideoBarColor}" />
     <SolidColorBrush x:Key="VideoBarStrokeBrush" Color="{DynamicResource VideoBarStrokeColor}" />

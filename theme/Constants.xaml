@@ -37,6 +37,7 @@
     <Color x:Key="MaskOpaqueColor">#FF000000</Color>
     <Color x:Key="MaskClearColor">#00000000</Color>
     <Color x:Key="OverlayDimColor">#4D000000</Color>
+    <Color x:Key="ViewerBackdropTintColor">#4DF3F3F3</Color>
     <Color x:Key="TimeMainColor">#005FB8</Color>
     <Color x:Key="TimeExtraColor">#4F9BDB</Color>
     <Color x:Key="TimeCompletionistColor">#A7CBEC</Color>

@@ -13,6 +13,9 @@ namespace Fluent11Helper
         private const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
         private const int DWMSBT_AUTO = 0;
         private const int DWMSBT_MAINWINDOW = 2;
+        private const int DWMWA_CAPTION_COLOR = 35;
+        private const int DWMWA_COLOR_NONE = -2;
+        private const int DWMWA_COLOR_DEFAULT = -1;
 
         private static readonly DependencyProperty OriginalColorProperty =
             DependencyProperty.RegisterAttached("OriginalColor", typeof(Color?), typeof(MicaBackdrop), new PropertyMetadata(null));
@@ -94,6 +97,9 @@ namespace Fluent11Helper
                 return false;
             }
 
+            var caption = DWMWA_COLOR_NONE;
+            DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref caption, sizeof(int));
+
             var chrome = WindowChrome.GetWindowChrome(window);
             if (chrome != null)
             {
@@ -124,6 +130,8 @@ namespace Fluent11Helper
 
             var backdrop = DWMSBT_AUTO;
             DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int));
+            var caption = DWMWA_COLOR_DEFAULT;
+            DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref caption, sizeof(int));
 
             if (window.ReadLocalValue(WindowChrome.WindowChromeProperty) != DependencyProperty.UnsetValue)
             {

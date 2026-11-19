@@ -28,6 +28,32 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="ViewerButton" TargetType="Button">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Border x:Name="Back" Width="28" Height="28" Background="Transparent" CornerRadius="14" />
+                            <TextBlock Text="{TemplateBinding Content}" FontFamily="{DynamicResource FluentIconFont}" FontSize="16"
+                                       Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource SubtleHoverBrush}" TargetName="Back" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource SubtlePressedBrush}" TargetName="Back" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="VideoSlider" TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
             <Setter Property="Focusable" Value="False" />
             <Setter Property="IsMoveToPointEnabled" Value="True" />
@@ -37,8 +63,8 @@
         <Style x:Key="ViewerArrow" TargetType="Button">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Focusable" Value="False" />
-            <Setter Property="Width" Value="24" />
-            <Setter Property="Height" Value="44" />
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
             <Setter Property="Margin" Value="12,0" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Opacity" Value="0" />
@@ -48,11 +74,11 @@
                     <ControlTemplate TargetType="Button">
                         <Grid>
                             <Border Background="{DynamicResource PopupBackgroundBrush}" Opacity="0.8"
-                                    CornerRadius="{DynamicResource ControlCornerRadius}" />
+                                    CornerRadius="20" />
                             <Border BorderBrush="{DynamicResource PopupBorderBrush}"
-                                    BorderThickness="1" CornerRadius="{DynamicResource ControlCornerRadius}" />
-                            <Border x:Name="Overlay" Background="Transparent" CornerRadius="{DynamicResource ControlCornerRadius}" />
-                            <TextBlock x:Name="Glyph" Text="{TemplateBinding Content}" FontFamily="{DynamicResource FluentIconFont}" FontSize="8"
+                                    BorderThickness="1" CornerRadius="20" />
+                            <Border x:Name="Overlay" Background="Transparent" CornerRadius="20" />
+                            <TextBlock x:Name="Glyph" Opacity="0.6" Text="{TemplateBinding Content}" FontFamily="{DynamicResource FluentIconFont}" FontSize="10"
                                        Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        RenderTransformOrigin="0.5,0.5">
                                 <TextBlock.RenderTransform>
@@ -63,6 +89,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="{DynamicResource SubtleHoverBrush}" TargetName="Overlay" />
+                                <Setter Property="Opacity" Value="1" TargetName="Glyph" />
                             </Trigger>
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
@@ -148,7 +175,10 @@
         </Style>
     </Grid.Resources>
 
-    <Border x:Name="Dim" Background="{DynamicResource OverlayDimBrush}" />
+    <Grid x:Name="Backdrop">
+        <Image x:Name="BackdropImage" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality" />
+        <Border x:Name="Dim" Background="{DynamicResource ViewerBackdropTintBrush}" />
+    </Grid>
 
     <Grid x:Name="Frame" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{DynamicResource VideoBackgroundBrush}">
         <Image x:Name="Behind" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" Visibility="Collapsed" />
@@ -201,5 +231,44 @@
                 <Button x:Name="FullScreen" Grid.Column="5" Style="{StaticResource VideoButton}" Content="&#xE740;" />
             </Grid>
         </Border>
+
+        <Grid x:Name="FullPill" Height="36" Margin="0,0,0,16" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+              Opacity="0" Visibility="Collapsed">
+            <Border Background="{DynamicResource PopupBackgroundBrush}" Opacity="0.8" CornerRadius="18" />
+            <Border BorderBrush="{DynamicResource PopupBorderBrush}" BorderThickness="1" CornerRadius="18" />
+            <StackPanel Orientation="Horizontal" Margin="1">
+                <StackPanel x:Name="FullCounter" Orientation="Horizontal" Margin="16,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="FullCounterCurrent" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" />
+                    <TextBlock x:Name="FullCounterTotal" Foreground="{DynamicResource TextBrushDarker}" />
+                </StackPanel>
+                <Border x:Name="FullDivider" Width="1" Margin="0,8" Background="{DynamicResource PopupBorderBrush}" />
+                <Button x:Name="FullScreenExit" Style="{StaticResource ViewerButton}" Content="&#xE73F;" />
+            </StackPanel>
+        </Grid>
     </Grid>
+
+    <Button x:Name="PreviousOutside" Style="{StaticResource ViewerArrow}" Content="&#xEDD9;" HorizontalAlignment="Center" />
+    <Button x:Name="NextOutside" Style="{StaticResource ViewerArrow}" Content="&#xEDDA;" HorizontalAlignment="Center" />
+    <StackPanel x:Name="Below" Height="68" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0">
+        <TextBlock x:Name="Title" Height="24" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"
+                   FontSize="{DynamicResource FontSizeLarge}" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" />
+        <Grid x:Name="Pill" Height="36" Margin="0,8,0,0" HorizontalAlignment="Center">
+            <Border Background="{DynamicResource PopupBackgroundBrush}" Opacity="0.8" CornerRadius="18" />
+            <Border BorderBrush="{DynamicResource PopupBorderBrush}" BorderThickness="1" CornerRadius="18" />
+            <StackPanel Orientation="Horizontal" Margin="1">
+                <StackPanel x:Name="CounterOutside" Orientation="Horizontal" Margin="16,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="CounterCurrent" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" />
+                    <TextBlock x:Name="CounterTotal" Foreground="{DynamicResource TextBrushDarker}" />
+                </StackPanel>
+                <Border x:Name="BelowDivider" Width="1" Margin="0,8" Background="{DynamicResource PopupBorderBrush}" />
+                <Button x:Name="FullScreenOutside" Style="{StaticResource ViewerButton}" Content="&#xE740;" />
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+
+    <StackPanel x:Name="Caption" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Visibility="Collapsed">
+        <Button x:Name="CaptionMinimize" Style="{DynamicResource WindowBarButton}" Content="&#xE921;" />
+        <Button x:Name="CaptionMaximize" Style="{DynamicResource WindowBarButton}" Content="&#xE922;" />
+        <Button x:Name="CaptionClose" Style="{DynamicResource WindowBarCloseButton}" Content="&#xE8BB;" />
+    </StackPanel>
 </Grid>

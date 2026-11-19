@@ -325,7 +325,7 @@
                                             <ColumnDefinition Width="3*" MinWidth="320" />
                                             <ColumnDefinition Width="2*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding Game.Notes}" ToolTip="{Binding Game.Notes}"
+                                        <TextBlock Text="{Binding Game.Notes}"
                                                    TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
                                                    LineStackingStrategy="BlockLineHeight" LineHeight="20" MaxHeight="40"
                                                    FontSize="{DynamicResource FontSize}" Foreground="{DynamicResource TextBrushDarker}" />
@@ -410,10 +410,21 @@
                                         <Setter Property="MinWidth" Value="160" />
                                         <Setter Property="Margin" Value="0,0,8,8" />
                                         <Setter Property="Padding" Value="16,12" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="SidePanel">
+                                                <Setter Property="MinWidth" Value="112" />
+                                                <Setter Property="Padding" Value="10,6" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
                                     </Style>
                                     <Style TargetType="TextBlock" x:Key="StatValue" BasedOn="{StaticResource BaseTextBlockStyle}">
                                         <Setter Property="FontSize" Value="{DynamicResource FontSizeLarger}" />
                                         <Setter Property="FontWeight" Value="SemiBold" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="SidePanel">
+                                                <Setter Property="FontSize" Value="{DynamicResource FontSizeLarge}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
                                     </Style>
                                 </WrapPanel.Resources>
                                 <Border>
@@ -480,6 +491,7 @@
                                                 <MultiDataTrigger>
                                                     <MultiDataTrigger.Conditions>
                                                         <Condition Binding="{Binding Visibility, ElementName=PART_ElemInstallSize}" Value="Collapsed" />
+                                                        <Condition Binding="{Settings DetailsVisibility.InstallSize}" Value="True" />
                                                         <Condition Binding="{PluginSettings Plugin=Fluent11Helper, Path=HasRequirements, FallbackValue=False}" Value="True" />
                                                         <Condition Binding="{PluginSettings Plugin=Fluent11Helper, Path=SystemRequirementsCard, FallbackValue=False}" Value="True" />
                                                     </MultiDataTrigger.Conditions>
@@ -551,8 +563,8 @@
                                     <Style x:Key="ShotArrow" TargetType="Button">
                                         <Setter Property="OverridesDefaultStyle" Value="True" />
                                         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                                        <Setter Property="Width" Value="24" />
-                                        <Setter Property="Height" Value="44" />
+                                        <Setter Property="Width" Value="28" />
+                                        <Setter Property="Height" Value="28" />
                                         <Setter Property="VerticalAlignment" Value="Center" />
                                         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                                         <Setter Property="Visibility" Value="Hidden" />
@@ -566,11 +578,11 @@
                                                 <ControlTemplate TargetType="Button">
                                                     <Grid>
                                                         <Border Background="{DynamicResource PopupBackgroundBrush}" Opacity="0.8"
-                                                                CornerRadius="{DynamicResource ControlCornerRadius}" />
+                                                                CornerRadius="14" />
                                                         <Border BorderBrush="{DynamicResource PopupBorderBrush}"
-                                                                BorderThickness="1" CornerRadius="{DynamicResource ControlCornerRadius}" />
-                                                        <Border x:Name="Overlay" Background="Transparent" CornerRadius="{DynamicResource ControlCornerRadius}" />
-                                                        <TextBlock x:Name="Glyph" Text="{TemplateBinding Content}" FontFamily="{DynamicResource FluentIconFont}" FontSize="8"
+                                                                BorderThickness="1" CornerRadius="14" />
+                                                        <Border x:Name="Overlay" Background="Transparent" CornerRadius="14" />
+                                                        <TextBlock x:Name="Glyph" Opacity="0.6" Text="{TemplateBinding Content}" FontFamily="{DynamicResource FluentIconFont}" FontSize="8"
                                                                    Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                                    RenderTransformOrigin="0.5,0.5">
                                                             <TextBlock.RenderTransform>
@@ -581,6 +593,7 @@
                                                     <ControlTemplate.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">
                                                             <Setter Property="Background" Value="{DynamicResource SubtleHoverBrush}" TargetName="Overlay" />
+                                                            <Setter Property="Opacity" Value="1" TargetName="Glyph" />
                                                         </Trigger>
                                                         <MultiDataTrigger>
                                                             <MultiDataTrigger.Conditions>
@@ -807,7 +820,12 @@
                             </StackPanel>
 
                             <DockPanel Margin="0,8,0,0">
-                                <StackPanel DockPanel.Dock="Left" Width="{Settings PropertiesPanelWith}">
+                                <StackPanel x:Name="ContentLeft" Width="{Settings PropertiesPanelWith}">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="DockPanel.Dock" Value="Left" />
+                                        </Style>
+                                    </StackPanel.Style>
                                     <StackPanel.Resources>
                                         <Style TargetType="ItemsControl">
                                             <Setter Property="VerticalAlignment" Value="Center" />
@@ -1168,7 +1186,12 @@
 
                                 </StackPanel>
 
-                                <StackPanel DockPanel.Dock="Right" Margin="16,0,0,0">
+                                <StackPanel x:Name="ContentRight" DockPanel.Dock="Right">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Margin" Value="16,0,0,0" />
+                                        </Style>
+                                    </StackPanel.Style>
                                     <StackPanel>
                                         <StackPanel.Style>
                                             <Style TargetType="StackPanel">
@@ -1677,7 +1700,7 @@
                                         </Border>
                                     </StackPanel>
 
-                                    <StackPanel Margin="0,8,0,0">
+                                    <StackPanel x:Name="SystemRequirementsSection" Margin="0,8,0,0">
                                         <StackPanel.Style>
                                             <Style TargetType="StackPanel">
                                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -1771,6 +1794,14 @@
         <ControlTemplate.Triggers>
             <Trigger Property="Tag" Value="Overlay">
                 <Setter TargetName="PART_ScrollViewHost" Property="Tag" Value="Overlay" />
+            </Trigger>
+            <Trigger Property="Tag" Value="SidePanel">
+                <Setter TargetName="DetailsCoverHost" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="ContentLeft" Property="DockPanel.Dock" Value="Bottom" />
+                <Setter TargetName="ContentLeft" Property="MinWidth" Value="{Binding ViewportWidth, ElementName=PART_ScrollViewHost, Converter={StaticResource MathConverter}, ConverterParameter='Max(0,x-48)'}" />
+                <Setter TargetName="ContentLeft" Property="MaxWidth" Value="{Binding ViewportWidth, ElementName=PART_ScrollViewHost, Converter={StaticResource MathConverter}, ConverterParameter='Max(0,x-48)'}" />
+                <Setter TargetName="ContentRight" Property="Margin" Value="0" />
+                <Setter TargetName="SystemRequirementsSection" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="Tag" Value="OverlayBack">
                 <Setter TargetName="PART_ScrollViewHost" Property="Tag" Value="Overlay" />

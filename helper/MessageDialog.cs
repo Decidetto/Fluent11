@@ -24,6 +24,7 @@ namespace Fluent11Helper
                     icon.Visibility = Visibility.Collapsed;
                 }
 
+                var hasTitle = !string.IsNullOrWhiteSpace(window.Title);
                 var title = new TextBlock
                 {
                     Text = window.Title,
@@ -50,13 +51,17 @@ namespace Fluent11Helper
                 footer.SetResourceReference(Border.BackgroundProperty, "DialogFooterBrush");
                 footer.SetResourceReference(Border.BorderBrushProperty, "ControlStrokeBrush");
 
-                body.Margin = new Thickness(14, 0, 14, 16);
+                body.Margin = new Thickness(14, hasTitle ? 0 : 14, 14, 16);
 
                 var dock = new DockPanel { LastChildFill = true };
                 DockPanel.SetDock(title, Dock.Top);
                 DockPanel.SetDock(footer, Dock.Bottom);
                 window.Content = null;
-                dock.Children.Add(title);
+                if (hasTitle)
+                {
+                    dock.Children.Add(title);
+                }
+
                 dock.Children.Add(footer);
                 dock.Children.Add(body);
                 window.Content = dock;
